@@ -1,0 +1,87 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Shop — Basic Store</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=DM+Sans:ital,opsz,wght@0,9..40,400;0,9..40,500;0,9..40,600;0,9..40,700;1,9..40,400&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="styles.css" />
+</head>
+<body>
+  <header class="header">
+    <div class="header__inner">
+      <a href="#" class="logo">Shop<span>.</span></a>
+      <nav class="nav">
+        <a href="#products">Products</a>
+        <a href="#about">About</a>
+      </nav>
+      <button type="button" class="cart-btn" id="cartToggle" aria-label="Open cart">
+        <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">
+          <path d="M6 6h15l-1.5 9h-12z" />
+          <circle cx="9" cy="20" r="1" />
+          <circle cx="18" cy="20" r="1" />
+          <path d="M6 6L5 3H2" />
+        </svg>
+        <span class="cart-btn__count" id="cartCount">0</span>
+      </button>
+    </div>
+  </header>
+
+  <main>
+    <section class="hero">
+      <p class="hero__eyebrow">New season</p>
+      <h1>Everyday essentials,<br />picked for you.</h1>
+      <p class="hero__sub">Browse our collection and add items to your cart. No account needed.</p>
+    </section>
+
+    <section class="products" id="products">
+      <div class="products__header">
+        <h2>All products</h2>
+        <label class="sort">
+          <span class="visually-hidden">Sort by</span>
+          <select id="sortSelect">
+            <option value="default">Featured</option>
+            <option value="price-asc">Price: low to high</option>
+            <option value="price-desc">Price: high to low</option>
+            <option value="name">Name A–Z</option>
+          </select>
+        </label>
+      </div>
+      <div class="product-grid" id="productGrid" aria-live="polite"></div>
+    </section>
+
+    <section class="about" id="about">
+      <h2>About this store</h2>
+      <p>This is a demo storefront built with HTML, CSS, and JavaScript. Cart data stays in your browser only.</p>
+    </section>
+  </main>
+
+  <aside class="cart-drawer" id="cartDrawer" aria-hidden="true">
+    <div class="cart-drawer__panel" role="dialog" aria-labelledby="cartTitle">
+      <div class="cart-drawer__head">
+        <h2 id="cartTitle">Your cart</h2>
+        <button type="button" class="cart-drawer__close" id="cartClose" aria-label="Close cart">&times;</button>
+      </div>
+      <ul class="cart-list" id="cartList"></ul>
+      <p class="cart-empty" id="cartEmpty">Your cart is empty.</p>
+      <footer class="cart-drawer__foot">
+        <div class="cart-total">
+          <span>Subtotal</span>
+          <strong id="cartSubtotal">$0.00</strong>
+        </div>
+        <button type="button" class="btn btn--primary btn--block" id="checkoutBtn" disabled>Checkout</button>
+        <button type="button" class="btn btn--ghost btn--block" id="clearCartBtn">Clear cart</button>
+      </footer>
+    </div>
+  </aside>
+  <div class="overlay" id="overlay"></div>
+
+  <footer class="footer">
+    <p>&copy; 2026 Shop. Frontend demo only.</p>
+  </footer>
+
+  <script src="app.js"></script>
+</body>
+</html>
