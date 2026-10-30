@@ -1,0 +1,1278 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>City Shuffle</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<meta name="description" content="An interactive paper city that rearranges itself every night, and an AI that says when it is sure, guessing, or wrong.">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Nunito:wght@400;600;700;800;900&display=swap">
+<style>
+/* Layout: the paper city map is the hero (left), the AI message panel is second (right),
+   quiet grouped controls sit in one row above. Single deliberate look: paper by day, deep blue by night. */
+:root{
+  --paper:#FBF6EC; --paper-2:#F1E7D3; --street:#E7DCC5; --ink:#2F3447; --ink-soft:#5E6274;
+  --accent:#E0532F; --accent-soft:rgba(224,83,47,.12);
+  --sure:#FFFDF8; --think:#F2C25B; --think-ink:#5C3F05; --fog:#DFE0E6; --fog-line:#7C8091;
+  --water:#9CCBDD; --water-ink:#2C5E73; --grass:#DCE9C4;
+  --night:#14214D; --night-ink:#E9ECF8;
+  --page:var(--paper); --page-ink:var(--ink); --group:rgba(47,52,71,.06);
+  --font:"Nunito", ui-rounded, "Segoe UI", system-ui, -apple-system, "Noto Sans Devanagari", sans-serif;
+  color-scheme:light;
+}
+*{box-sizing:border-box}
+[hidden]{display:none!important}
+html,body{height:100%}
+body{margin:0;background:var(--page);color:var(--page-ink);font-family:var(--font);font-size:16px;line-height:1.45;
+  padding-left:max(16px, env(safe-area-inset-left,0px));padding-right:max(16px, env(safe-area-inset-right,0px));padding-block:12px 20px;
+  transition:background-color 1s ease,color 1s ease}
+body.night{--page:var(--night);--page-ink:var(--night-ink);--group:rgba(255,255,255,.09)}
+body.story-on{padding-bottom:140px}
+button{font:inherit;color:inherit}
+:focus-visible{outline:3px solid var(--accent);outline-offset:3px;border-radius:10px}
+
+.app{max-width:1400px;margin:0 auto;display:grid;grid-template-columns:minmax(0,1fr) minmax(320px,410px);
+  grid-template-areas:"top top" "ctrl ctrl" "stage panel";gap:12px 22px}
+
+/* ---- header ---- */
+.top{grid-area:top;display:flex;flex-wrap:wrap;align-items:center;justify-content:space-between;gap:10px 24px}
+.brand{display:flex;align-items:center;gap:12px;min-width:0}
+.brand svg{width:44px;height:44px;flex:none}
+.brand h1{margin:0;font-size:28px;font-weight:900;letter-spacing:-.01em;line-height:1.05}
+.brand p{margin:0;font-size:16px;opacity:.78}
+.residents{display:flex;gap:8px;flex-wrap:wrap}
+.res{display:flex;align-items:center;gap:8px;padding:5px 14px 5px 5px;border-radius:999px;border:2px solid var(--ink);
+  background:var(--paper);color:var(--ink);cursor:pointer;font-weight:800;font-size:16px;min-height:44px}
+.res small{font-weight:600;color:var(--ink-soft);font-size:16px}
+.res[aria-pressed="true"]{background:var(--ink);color:var(--paper)}
+.res[aria-pressed="true"] small{color:#D4D6E0}
+.ava{width:32px;height:32px;border-radius:50%;display:grid;place-items:center;color:#fff;font-weight:900;flex:none;border:2px solid var(--ink)}
+.clock{display:flex;align-items:center;gap:10px}
+.clock svg{width:34px;height:34px}
+.clock .t{font-size:30px;font-weight:900;font-variant-numeric:tabular-nums;line-height:1}
+.clock .ph{font-size:16px;opacity:.8}
+
+/* ---- controls ---- */
+.controls{grid-area:ctrl;display:flex;flex-wrap:wrap;gap:8px 8px;align-items:center}
+.group{display:flex;gap:6px;align-items:center;flex-wrap:wrap;padding:5px;border-radius:999px;background:var(--group)}
+.group .gl{font-size:16px;font-weight:700;opacity:.75;padding:0 6px 0 8px}
+.btn{font-size:16px;font-weight:800;border:2px solid var(--ink);background:var(--paper);color:var(--ink);border-radius:999px;
+  padding:6px 12px;cursor:pointer;min-height:40px;line-height:1.1}
+.btn:hover{background:#fff}
+.btn.primary{background:var(--accent);border-color:var(--ink);color:#fff}
+.btn.primary:hover{background:#C9431F}
+.btn[aria-pressed="true"]{background:var(--ink);color:var(--paper)}
+.btn:disabled{opacity:.45;cursor:not-allowed}
+.slider{display:flex;align-items:center;gap:8px;padding:0 8px;font-size:16px;font-weight:700}
+.slider input{width:120px;accent-color:var(--accent)}
+.seed{font-size:16px;opacity:.75;padding:0 8px;font-variant-numeric:tabular-nums}
+
+/* ---- stage / board ---- */
+.stage{grid-area:stage;display:flex;flex-direction:column;align-items:center;gap:10px;min-width:0}
+.board-wrap{width:min(100%, max(300px, calc(100dvh - 205px)));max-width:100%}
+.board{position:relative;width:100%;aspect-ratio:1;border:2.5px solid var(--ink);border-radius:26px;overflow:hidden;
+  container-type:inline-size;background-color:var(--street);
+  background-image:radial-gradient(rgba(47,52,71,.07) 1px, transparent 1.2px);background-size:14px 14px;
+  box-shadow:0 4px 0 var(--ink), 0 20px 40px rgba(20,33,77,.18)}
+.layer{position:absolute;inset:0;width:100%;height:100%;pointer-events:none}
+.layer.under{z-index:0}.layer.over{z-index:5}
+.sky{position:absolute;inset:0;z-index:4;pointer-events:none;opacity:0;transition:opacity 1.1s ease;
+  background:radial-gradient(1.5px 1.5px at 12% 18%,#fff 60%,transparent),radial-gradient(1.5px 1.5px at 72% 12%,#fff 60%,transparent),
+  radial-gradient(1px 1px at 40% 40%,#fff 60%,transparent),radial-gradient(1.5px 1.5px at 86% 58%,#fff 60%,transparent),
+  radial-gradient(1px 1px at 22% 76%,#fff 60%,transparent),radial-gradient(1.5px 1.5px at 60% 86%,#fff 60%,transparent),
+  linear-gradient(rgba(20,33,77,.62),rgba(14,24,60,.74))}
+body.night .sky{opacity:1}
+.sky.morning{opacity:1;background:radial-gradient(circle at 80% 0%, rgba(255,196,110,.55), rgba(255,170,90,.18) 55%, rgba(255,230,180,.05))}
+
+.slot{position:absolute;border-radius:16px}
+.block{z-index:1;background:var(--sure);border:2px solid var(--ink);display:grid;grid-template-rows:auto minmax(0,1fr) auto;
+  padding:1cqw 1.1cqw;gap:.4cqw;box-shadow:0 3px 0 rgba(47,52,71,.4);transition:background-color .5s,border-color .5s,opacity .6s,filter .6s}
+.block.moving{z-index:3;box-shadow:0 10px 0 rgba(47,52,71,.25),0 18px 30px rgba(0,0,0,.25)}
+.bname{display:flex;align-items:center;gap:.5cqw;font-weight:900;font-size:max(10px,2.15cqw);line-height:1.1;min-width:0}
+.bname i{width:1.4cqw;height:1.4cqw;border-radius:50%;background:var(--tint);border:1.5px solid var(--ink);flex:none}
+.bname span{white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.places{display:grid;grid-template-columns:1fr 1fr;grid-template-rows:1fr 1fr;gap:.2cqw;min-height:0;transition:opacity .5s,filter .5s}
+.place{display:flex;flex-direction:column;align-items:center;justify-content:center;min-width:0;min-height:0;border-radius:10px;position:relative}
+.place svg{width:5.6cqw;height:5.6cqw;flex:none}
+.place span{font-size:max(8px,1.42cqw);font-weight:800;line-height:1.05;text-align:center;color:var(--ink-soft);max-width:100%;overflow-wrap:anywhere}
+.place.hl{background:var(--accent-soft);box-shadow:inset 0 0 0 2px var(--accent)}
+.chip{justify-self:start;display:inline-flex;align-items:center;gap:.35em;font-size:max(9px,1.72cqw);font-weight:900;padding:.1em .6em;
+  border-radius:999px;background:var(--ink);color:#fff;white-space:nowrap;max-width:100%;overflow:hidden}
+.qmark{display:none;position:absolute;top:-1.3cqw;right:-1.3cqw;width:3.8cqw;height:3.8cqw;border-radius:50%;background:var(--think);
+  border:2px solid var(--ink);font-weight:900;font-size:max(10px,2.4cqw);place-items:center;color:var(--ink)}
+.fog{display:none;position:absolute;inset:0;border-radius:inherit;pointer-events:none;
+  background:radial-gradient(circle at 25% 35%, rgba(255,255,255,.85), transparent 45%),radial-gradient(circle at 75% 60%, rgba(255,255,255,.8), transparent 50%),rgba(223,224,230,.55);
+  animation:drift 6s ease-in-out infinite alternate}
+@keyframes drift{from{background-position:0 0, 0 0, 0 0}to{background-position:12px -6px,-14px 6px,0 0}}
+.lvl-think{border-color:#9C6F12;background:repeating-linear-gradient(135deg, rgba(242,194,91,.6) 0 7px, var(--sure) 7px 14px)}
+.lvl-think .chip{background:var(--think);color:var(--think-ink);border:1.5px solid #9C6F12}
+.lvl-think .qmark{display:grid}
+.lvl-unknown{background:var(--fog);border:3px dotted var(--fog-line);box-shadow:none}
+.lvl-unknown .places{opacity:.28;filter:blur(1.3px)}
+.lvl-unknown .fog{display:block}
+.lvl-unknown .chip{background:#fff;color:var(--ink);border:2px dotted var(--fog-line);position:relative;z-index:1}
+body.night .chip{opacity:0}
+.board.offline .block{filter:grayscale(.85);opacity:.62}
+.board.offline .chip::after{content:" · last known";font-weight:700}
+.block.blink{animation:blink 1.3s ease-in-out 1}
+@keyframes blink{0%,100%{box-shadow:0 3px 0 rgba(47,52,71,.4)}45%{box-shadow:0 0 0 7px var(--accent),0 0 22px 6px rgba(224,83,47,.6);transform:scale(1.04)}}
+
+.anchor{z-index:1;background:var(--paper-2);border:2.5px solid var(--ink);display:flex;flex-direction:column;align-items:center;justify-content:center;gap:.4cqw;
+  box-shadow:0 3px 0 rgba(47,52,71,.4)}
+.anchor > svg{width:8.5cqw;height:8.5cqw}
+.anchor .aname{font-weight:900;font-size:max(10px,2cqw);text-align:center;line-height:1.1}
+.anchor .never{font-size:max(8px,1.5cqw);font-weight:800;color:var(--accent);display:flex;align-items:center;gap:.3em}
+.pin{position:absolute;top:-1cqw;right:-1cqw;width:4.4cqw;height:4.4cqw}
+.anchor.pulse{animation:pulse 1s ease-in-out 3}
+@keyframes pulse{50%{box-shadow:0 0 0 8px var(--accent),0 3px 0 rgba(47,52,71,.4)}}
+.lot{z-index:0;border:2px dashed rgba(47,52,71,.35);background:var(--grass);display:grid;place-items:center;text-align:center;
+  font-size:max(9px,1.6cqw);font-weight:800;color:#56704A}
+
+.banner{position:absolute;left:50%;top:2.2%;transform:translateX(-50%);z-index:6;background:var(--ink);color:#fff;border-radius:999px;
+  padding:8px 18px;font-weight:800;font-size:max(12px,2cqw);white-space:nowrap;box-shadow:0 4px 0 rgba(0,0,0,.25);display:flex;gap:10px;align-items:center}
+.banner.warn{background:var(--accent)}
+.banner .cd{font-variant-numeric:tabular-nums;background:rgba(255,255,255,.2);padding:0 .5em;border-radius:999px}
+
+.legend{display:flex;flex-wrap:wrap;justify-content:center;gap:6px 18px;font-size:16px;font-weight:700}
+.legend span{display:inline-flex;align-items:center;gap:8px}
+.sw{width:34px;height:22px;border-radius:7px;border:2px solid var(--ink);display:inline-grid;place-items:center;font-size:13px;font-weight:900;color:var(--ink)}
+.sw.sure{background:var(--sure)}
+.sw.think{background:repeating-linear-gradient(135deg, rgba(242,194,91,.9) 0 5px, var(--sure) 5px 10px);border-color:#9C6F12}
+.sw.unknown{background:var(--fog);border:2.5px dotted var(--fog-line)}
+.sw.anchor{background:var(--paper-2)}
+
+/* ---- panel ---- */
+.panel{grid-area:panel;display:flex;flex-direction:column;gap:12px;min-width:0;max-height:calc(100dvh - 150px)}
+.card{background:var(--paper);color:var(--ink);border:2px solid var(--ink);border-radius:22px;box-shadow:0 4px 0 var(--ink)}
+.msg{padding:16px 18px;overflow:auto;min-height:0;flex:1 1 auto}
+.who{display:flex;align-items:center;gap:12px;padding-bottom:12px;border-bottom:2px dashed rgba(47,52,71,.2);margin-bottom:12px}
+.who .ava{width:46px;height:46px;font-size:20px}
+.who-n{font-weight:900;font-size:20px;line-height:1.1}
+.who-t{font-size:16px;color:var(--ink-soft)}
+.who .spacer{flex:1}
+.ai{display:flex;align-items:center;gap:6px;font-size:16px;font-weight:800;color:var(--accent);margin-bottom:6px}
+.ai svg{width:20px;height:20px}
+.msg p{margin:.3em 0}
+.k{font-size:23px;line-height:1.45}
+.k h2{font-size:27px;line-height:1.25;margin:.1em 0 .3em;font-weight:900;text-wrap:balance}
+.k ol{padding-left:1.3em;margin:.4em 0}
+.k li{margin:.35em 0}
+.k li::marker{font-weight:900;color:var(--accent)}
+.k .small{font-size:20px;color:var(--ink-soft)}
+.read{display:inline-flex;align-items:center;gap:8px;font-size:20px;min-height:52px;padding:8px 20px;margin-top:8px}
+.read svg{width:24px;height:24px}
+.note{border-radius:16px;padding:10px 14px;margin:10px 0;display:flex;gap:10px;align-items:flex-start}
+.note svg{width:34px;height:34px;flex:none}
+.note.warn{background:var(--fog);border:2.5px dotted var(--fog-line)}
+.note.avoid{background:var(--accent-soft);border:2px solid var(--accent)}
+.note.ok{background:#E3F1DA;border:2px solid #5E8F4A}
+.note.shock{background:#FFF0D6;border:2px solid #9C6F12}
+.lang{display:flex;gap:4px}
+.lang .btn{padding:4px 12px;min-height:36px}
+.l-head{display:flex;align-items:center;gap:10px;font-size:22px;font-weight:900;margin:4px 0 10px}
+.l-head svg{width:38px;height:38px}
+.l-head small{font-size:16px;font-weight:700;color:var(--ink-soft);display:block}
+.pics{display:flex;flex-wrap:wrap;gap:10px 4px;align-items:flex-start}
+.pic{width:86px;display:flex;flex-direction:column;align-items:center;gap:4px;text-align:center;font-size:16px;font-weight:800;line-height:1.15}
+.pic svg{width:62px;height:62px;background:var(--paper-2);border:2px solid var(--ink);border-radius:18px;padding:6px}
+.pic.end svg{background:var(--accent-soft);border-color:var(--accent)}
+.pic.unk svg{background:var(--fog);border-style:dotted}
+.sep{width:16px;align-self:center;margin-top:-22px;color:var(--ink-soft);font-weight:900;font-size:20px;text-align:center}
+.arj{display:flex;gap:16px;align-items:center;flex-wrap:wrap}
+.bigarrow{width:128px;height:128px;border-radius:28px;background:var(--ink);display:grid;place-items:center}
+.bigarrow svg{width:96px;height:96px}
+.buzz{display:flex;flex-direction:column;align-items:center;gap:2px;font-size:16px;font-weight:800;color:var(--ink-soft)}
+.buzz svg{width:150px;height:80px}
+.buzz .vl,.buzz .vr{opacity:.15}
+.buzz.left .vl,.buzz.right .vr{opacity:1;animation:buzz .5s ease-in-out infinite alternate;transform-box:fill-box;transform-origin:center}
+@keyframes buzz{from{transform:translateX(-2px)}to{transform:translateX(2px)}}
+.steps{display:flex;gap:6px;margin:12px 0;flex-wrap:wrap}
+.steps span{width:50px;height:50px;border-radius:14px;border:2px solid var(--ink);display:grid;place-items:center;background:var(--paper-2)}
+.steps span svg{width:34px;height:34px}
+.orders{list-style:none;padding:0;margin:8px 0;display:flex;flex-direction:column;gap:6px}
+.orders li{display:flex;align-items:center;gap:10px;font-weight:800;font-size:18px}
+.orders .n{width:32px;height:32px;border-radius:50%;background:var(--accent);color:#fff;display:grid;place-items:center;font-weight:900;border:2px solid var(--ink)}
+.orders svg{width:38px;height:38px}
+.orders .moved{font-size:16px;color:#9C6F12;font-weight:800}
+.prev{display:flex;align-items:center;gap:6px;font-size:16px;color:var(--ink-soft);text-decoration:line-through}
+.wrongbox{border:2.5px solid var(--accent);border-radius:18px;padding:12px 14px;margin:0 0 12px;background:#FFF3EE}
+.btn.big{font-size:21px;min-height:56px;padding:10px 22px;width:100%;margin:8px 0 4px}
+.linkbtn{background:none;border:none;color:var(--ink);text-decoration:underline;font-weight:800;font-size:16px;cursor:pointer;padding:6px 0}
+.sorry{border:2.5px solid var(--ink);border-radius:18px;padding:12px 14px;margin:0 0 12px;background:#fff}
+.thanks{display:flex;gap:10px;align-items:center;font-weight:900;color:#3D6E2B}
+.thanks svg{width:32px;height:32px;flex:none}
+.tips{list-style:none;padding:0;margin:8px 0;display:flex;flex-direction:column;gap:10px}
+.tips li{display:flex;gap:10px;align-items:center}
+.tips svg{width:40px;height:40px;flex:none}
+.offline{border:2.5px dashed var(--ink);border-radius:18px;padding:12px 14px;margin:0 0 12px;background:#EEF0F6}
+.offline h3{margin:0 0 4px;font-size:20px}
+
+.log{padding:0}
+.log summary{cursor:pointer;padding:12px 18px;font-weight:900;font-size:18px;list-style-position:inside}
+.log ol{list-style:none;margin:0;padding:0 18px 14px;max-height:240px;overflow:auto;display:flex;flex-direction:column;gap:8px}
+.log li{display:grid;grid-template-columns:4.6em 1fr;gap:6px;font-size:16px;line-height:1.35}
+.log time{font-weight:900;font-variant-numeric:tabular-nums;color:var(--accent)}
+.log .empty{color:var(--ink-soft);display:block}
+
+/* ---- story ---- */
+.storybar{position:fixed;left:0;right:0;bottom:0;z-index:20;background:rgba(20,24,42,.94);color:#fff;display:flex;gap:10px 18px;
+  align-items:center;justify-content:center;flex-wrap:wrap;
+  padding:12px max(16px, env(safe-area-inset-right,0px)) calc(12px + env(safe-area-inset-bottom,0px)) max(16px, env(safe-area-inset-left,0px))}
+.storybar p{margin:0;font-size:21px;font-weight:800;max-width:62ch;text-align:center;text-wrap:balance}
+.storybar .sc{display:flex;gap:6px;align-items:center}
+.storybar .btn{background:transparent;color:#fff;border-color:#fff}
+.storybar .btn.primary{background:var(--accent)}
+.storybar .count{font-variant-numeric:tabular-nums;opacity:.8}
+.sr{position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0 0 0 0);white-space:nowrap}
+
+@media (max-width:920px){
+  .app{grid-template-columns:minmax(0,1fr);grid-template-areas:"top" "ctrl" "stage" "panel"}
+  .panel{max-height:none}
+  .board-wrap{width:100%}
+  .brand h1{font-size:24px}
+  .slider input{width:120px}
+}
+@media (max-width:480px){ .place span{display:none} .place svg{width:7cqw;height:7cqw} .clock .t{font-size:24px} }
+@media (prefers-reduced-motion:reduce){
+  *,*::before,*::after{animation-duration:.001ms!important;animation-iteration-count:1!important;transition-duration:.001ms!important;transition-delay:0s!important}
+}
+</style>
+</head>
+<body>
+
+<!-- Hand-drawn icon set (inline SVG symbols, 48x48) -->
+<svg width="0" height="0" style="position:absolute" aria-hidden="true">
+<symbol id="i-home" viewBox="0 0 48 48"><g fill="none" stroke="#2F3447" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M10 22v18h28V22" fill="#F6CFA8"/><path d="M6 24 24 9l18 15" fill="#D46C4E"/><rect x="20" y="29" width="8" height="11" fill="#C6553A"/></g></symbol>
+<symbol id="i-bakery" viewBox="0 0 48 48"><g fill="none" stroke="#2F3447" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M7 32c0-10 8-17 17-17s17 7 17 17z" fill="#E9B76A"/><path d="M16 23l3 7M24 20v10M32 23l-3 7M5 36h38"/></g></symbol>
+<symbol id="i-pharmacy" viewBox="0 0 48 48"><g fill="none" stroke="#2F3447" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><rect x="8" y="10" width="32" height="30" rx="5" fill="#fff"/><path d="M24 17v16M16 25h16" stroke="#2E9E6B" stroke-width="6"/></g></symbol>
+<symbol id="i-banyan" viewBox="0 0 48 48"><g fill="none" stroke="#2F3447" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M24 44V26M15 44c1-5 2-9 2-15M33 44c-1-5-2-9-2-15M20 44c1-4 1-7 1-11"/><path d="M5 24c0-9 9-15 19-15s19 6 19 15c-7 5-31 5-38 0z" fill="#7DB36A"/></g></symbol>
+<symbol id="i-market" viewBox="0 0 48 48"><g fill="none" stroke="#2F3447" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M11 26v14h26V26" fill="#FBEBD0"/><path d="M7 16h34l-3 10H10z" fill="#E0532F"/><path d="M17 16l1 10M24 16v10M31 16l-1 10" stroke="#fff"/><path d="M19 40v-7h10v7"/></g></symbol>
+<symbol id="i-fruit" viewBox="0 0 48 48"><g fill="none" stroke="#2F3447" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><circle cx="17" cy="29" r="9" fill="#F2A33A"/><circle cx="31" cy="29" r="9" fill="#E0532F"/><path d="M24 20c0-5 3-8 7-9"/><path d="M31 11c3 0 5 2 5 4-3 0-5-2-5-4z" fill="#7DB36A"/></g></symbol>
+<symbol id="i-tea" viewBox="0 0 48 48"><g fill="none" stroke="#2F3447" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M10 19h22v9a11 11 0 0 1-22 0z" fill="#fff"/><path d="M32 22h3a4 4 0 0 1 0 8h-3M16 7c-2 3 2 4 0 8M24 7c-2 3 2 4 0 8M8 42h28"/></g></symbol>
+<symbol id="i-school" viewBox="0 0 48 48"><g fill="none" stroke="#2F3447" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><rect x="10" y="20" width="28" height="20" fill="#F3D27A"/><path d="M6 21 24 9l18 12z" fill="#D46C4E"/><rect x="21" y="31" width="6" height="9" fill="#fff"/><circle cx="24" cy="25" r="2.6" fill="#fff"/></g></symbol>
+<symbol id="i-gate" viewBox="0 0 48 48"><g fill="none" stroke="#2F3447" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M8 42V14M40 42V14M8 18h32M14 42V24M20 42V24M28 42V24M34 42V24M8 24h32"/><circle cx="8" cy="11" r="3" fill="#E0532F"/><circle cx="40" cy="11" r="3" fill="#E0532F"/></g></symbol>
+<symbol id="i-temple" viewBox="0 0 48 48"><g fill="none" stroke="#2F3447" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M24 3v4"/><path d="M24 7c4 4 7 8 7 12H17c0-4 3-8 7-12z" fill="#F2A33A"/><rect x="14" y="19" width="20" height="8" fill="#F6CFA8"/><rect x="9" y="27" width="30" height="14" fill="#F6CFA8"/><path d="M20 41v-8a4 4 0 0 1 8 0v8"/></g></symbol>
+<symbol id="i-flower" viewBox="0 0 48 48"><g fill="none" stroke="#2F3447" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M24 26v16M24 35c-4-5-9-4-11 0 4 2 8 2 11 0z" fill="#7DB36A"/><circle cx="24" cy="10" r="5" fill="#E77FA0"/><circle cx="16" cy="17" r="5" fill="#E77FA0"/><circle cx="32" cy="17" r="5" fill="#E77FA0"/><circle cx="24" cy="23" r="5" fill="#E77FA0"/><circle cx="24" cy="16.5" r="4" fill="#F2C25B"/></g></symbol>
+<symbol id="i-apartments" viewBox="0 0 48 48"><g fill="none" stroke="#2F3447" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><rect x="11" y="6" width="26" height="36" fill="#BFD6E8"/><path d="M17 13h4M27 13h4M17 20h4M27 20h4M17 27h4M27 27h4"/><path d="M21 42v-7h6v7" fill="#fff"/></g></symbol>
+<symbol id="i-playground" viewBox="0 0 48 48"><g fill="none" stroke="#2F3447" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M7 42 13 9h22l6 33M19 9v20M29 9v20"/><path d="M16 29h16" stroke="#E0532F" stroke-width="5"/></g></symbol>
+<symbol id="i-hotel" viewBox="0 0 48 48"><g fill="none" stroke="#2F3447" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><rect x="10" y="12" width="28" height="30" fill="#D9C2EA"/><path d="M7 12h34M19 19v13M29 19v13M19 25.5h10" /><path d="M20 42v-5h8v5"/><path d="M14 6h20v6H14z" fill="#E0532F"/></g></symbol>
+<symbol id="i-cafe" viewBox="0 0 48 48"><g fill="none" stroke="#2F3447" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M11 19h22v8a11 11 0 0 1-22 0z" fill="#C98B5A"/><path d="M33 22h3a4 4 0 0 1 0 8h-3M8 42h30M18 8c-2 3 2 4 0 7M26 8c-2 3 2 4 0 7"/></g></symbol>
+<symbol id="i-park" viewBox="0 0 48 48"><g fill="none" stroke="#2F3447" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M17 30v11M32 32v9M6 41h36"/><circle cx="17" cy="20" r="10" fill="#8CC07A"/><circle cx="32" cy="25" r="7" fill="#A6CF8F"/></g></symbol>
+<symbol id="i-pond" viewBox="0 0 48 48"><g fill="none" stroke="#2F3447" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><ellipse cx="24" cy="29" rx="18" ry="11" fill="#9CCBDD"/><path d="M14 28c3-2 5-2 8 0M26 32c3-2 5-2 8 0M36 18v-8M33 12l3-2 3 2"/></g></symbol>
+<symbol id="i-canal" viewBox="0 0 48 48"><g fill="none" stroke="#2F3447" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M4 16h40v18H4z" fill="#9CCBDD" stroke="none"/><path d="M4 16h40M4 34h40M8 26c3-3 6-3 9 0s6 3 9 0 6-3 9 0"/></g></symbol>
+<symbol id="i-boat" viewBox="0 0 48 48"><g fill="none" stroke="#2F3447" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M24 30V8l12 18H24z" fill="#fff"/><path d="M7 30h34l-5 9H12z" fill="#E0532F"/><path d="M4 43c4-2 8-2 12 0s8 2 12 0 8-2 12 0"/></g></symbol>
+<symbol id="i-festival" viewBox="0 0 48 48"><g fill="none" stroke="#2F3447" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M5 41 24 11l19 30z" fill="#F2C25B"/><path d="M24 11l-5 30M24 11l5 30" /><path d="M24 11V4l7 2-7 3" fill="#E0532F"/></g></symbol>
+<symbol id="i-foodcart" viewBox="0 0 48 48"><g fill="none" stroke="#2F3447" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><rect x="7" y="17" width="28" height="15" fill="#F6CFA8"/><path d="M5 17l5-8h22l5 8z" fill="#E0532F"/><path d="M35 23h7"/><circle cx="14" cy="37" r="4" fill="#fff"/><circle cx="29" cy="37" r="4" fill="#fff"/></g></symbol>
+<symbol id="i-library" viewBox="0 0 48 48"><g fill="none" stroke="#2F3447" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><rect x="8" y="9" width="9" height="32" fill="#E0532F"/><rect x="17" y="14" width="9" height="27" fill="#7DB36A"/><path d="M28 16l7-2 7 25-7 2z" fill="#9CCBDD"/><path d="M5 41h38"/></g></symbol>
+<symbol id="i-post" viewBox="0 0 48 48"><g fill="none" stroke="#2F3447" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><rect x="7" y="13" width="34" height="24" rx="3" fill="#fff"/><path d="M7 15l17 13 17-13"/><circle cx="36" cy="12" r="5" fill="#E0532F"/></g></symbol>
+<symbol id="i-lake" viewBox="0 0 48 48"><g fill="none" stroke="#2F3447" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M4 30c0-8 9-12 20-12s20 4 20 12-9 11-20 11S4 38 4 30z" fill="#9CCBDD"/><path d="M12 30c3-2 6-2 9 0M27 33c3-2 6-2 9 0M9 18V7M13 19v-8M9 7c2 0 3 2 3 4"/></g></symbol>
+<symbol id="i-bookshop" viewBox="0 0 48 48"><g fill="none" stroke="#2F3447" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M24 14c-5-3-11-3-17-1v25c6-2 12-2 17 1 5-3 11-3 17-1V13c-6-2-12-2-17 1z" fill="#fff"/><path d="M24 14v25M11 19h8M11 25h8M29 19h8M29 25h8"/></g></symbol>
+<symbol id="i-bus" viewBox="0 0 48 48"><g fill="none" stroke="#2F3447" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><rect x="7" y="9" width="34" height="26" rx="6" fill="#F2C25B"/><path d="M7 22h34M24 9v13"/><circle cx="15" cy="38" r="4" fill="#fff"/><circle cx="33" cy="38" r="4" fill="#fff"/></g></symbol>
+<symbol id="i-bench" viewBox="0 0 48 48"><g fill="none" stroke="#2F3447" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><rect x="8" y="16" width="32" height="7" rx="2" fill="#C98B5A"/><rect x="6" y="25" width="36" height="5" rx="2" fill="#C98B5A"/><path d="M11 30v10M37 30v10"/></g></symbol>
+<symbol id="i-hospital" viewBox="0 0 48 48"><g fill="none" stroke="#2F3447" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><rect x="8" y="12" width="32" height="30" fill="#fff"/><path d="M5 12h38"/><path d="M24 18v15M16.5 25.5h15" stroke="#E0532F" stroke-width="6"/><path d="M20 42v-5h8v5"/></g></symbol>
+<symbol id="i-clock" viewBox="0 0 48 48"><g fill="none" stroke="#2F3447" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><rect x="15" y="15" width="18" height="29" fill="#E8D3A8"/><path d="M13 15 24 3l11 12z" fill="#C6553A"/><circle cx="24" cy="25" r="6.5" fill="#fff"/><path d="M24 21.5V25l2.5 2"/><path d="M20 44v-7h8v7"/></g></symbol>
+<symbol id="i-pin" viewBox="0 0 48 48"><g fill="none" stroke="#2F3447" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"><path d="M24 45S9 30 9 20a15 15 0 0 1 30 0c0 10-15 25-15 25z" fill="#E0532F"/><rect x="18" y="18" width="12" height="10" rx="2" fill="#fff"/><path d="M20.5 18v-3a3.5 3.5 0 0 1 7 0v3" stroke="#fff"/></g></symbol>
+<symbol id="i-phone" viewBox="0 0 48 48"><g fill="none" stroke="#2F3447" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><rect x="14" y="5" width="20" height="38" rx="5" fill="#2F3447"/><rect x="17.5" y="10" width="13" height="25" fill="#9FE0C8" stroke="none"/></g></symbol>
+<symbol id="i-guide" viewBox="0 0 48 48"><g fill="none" stroke="#2F3447" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><circle cx="24" cy="11" r="6.5" fill="#F6CFA8"/><path d="M12 44V30c0-6 5-10 12-10s12 4 12 10v14z" fill="#F2D23A"/><path d="M19 21l5 9 5-9M15 34h18" stroke-width="2"/></g></symbol>
+<symbol id="i-fog" viewBox="0 0 48 48"><g fill="none" stroke="#2F3447" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M13 36h23a9 9 0 0 0 0-18 12 12 0 0 0-23-2 10 10 0 0 0 0 20z" fill="#DFE0E6" stroke-dasharray="3 3.5"/><path d="M20.5 23c0-4 7-4 7 0 0 3-3.5 3-3.5 6"/><circle cx="24" cy="32.5" r="1" fill="#2F3447"/></g></symbol>
+<symbol id="i-bridge" viewBox="0 0 48 48"><g fill="none" stroke="#2F3447" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M3 34h42v8H3z" fill="#9CCBDD" stroke="none"/><path d="M3 28c8-10 34-10 42 0" /><path d="M3 30h42M10 30v10M38 30v10M17 24v6M24 22v8M31 24v6"/></g></symbol>
+<symbol id="i-walk" viewBox="0 0 48 48"><g fill="none" stroke="#2F3447" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"><circle cx="26" cy="8" r="4.5" fill="#F6CFA8"/><path d="M25 15l-4 13 6 6 2 10M21 28l-5 15M24 18l8 6 5-1M23 17l-7 5-2 7"/></g></symbol>
+<symbol id="i-moon" viewBox="0 0 48 48"><g fill="none" stroke="#2F3447" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M30 6a18 18 0 1 0 12 29A14 14 0 0 1 30 6z" fill="#F2C25B"/></g></symbol>
+<symbol id="i-sun" viewBox="0 0 48 48"><g fill="none" stroke="#2F3447" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><circle cx="24" cy="24" r="9" fill="#F2C25B"/><path d="M24 4v6M24 38v6M4 24h6M38 24h6M10 10l4 4M34 34l4 4M10 38l4-4M34 14l4-4"/></g></symbol>
+<symbol id="i-spark" viewBox="0 0 48 48"><g fill="none" stroke="#2F3447" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M24 4l5 13 13 5-13 5-5 13-5-13-13-5 13-5z" fill="#E0532F"/></g></symbol>
+<symbol id="i-speaker" viewBox="0 0 48 48"><g fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><path d="M8 18h8l10-8v28l-10-8H8z" fill="currentColor"/><path d="M33 17a10 10 0 0 1 0 14M38 12a17 17 0 0 1 0 24"/></g></symbol>
+<symbol id="i-package" viewBox="0 0 48 48"><g fill="none" stroke="#2F3447" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M8 15l16-8 16 8v19l-16 8-16-8z" fill="#E9B76A"/><path d="M8 15l16 8 16-8M24 23v19M16 11l16 8"/></g></symbol>
+<symbol id="i-flag" viewBox="0 0 48 48"><g fill="none" stroke="#2F3447" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"><path d="M12 44V5"/><path d="M12 6h24l-5 8 5 8H12" fill="#E0532F"/></g></symbol>
+<symbol id="i-heart" viewBox="0 0 48 48"><g fill="none" stroke="#2F3447" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M24 41S6 30 6 18a9 9 0 0 1 18-3 9 9 0 0 1 18 3c0 12-18 23-18 23z" fill="#E77FA0"/></g></symbol>
+</svg>
+
+<div class="app">
+  <header class="top">
+    <div class="brand">
+      <svg viewBox="0 0 48 48" aria-hidden="true"><use href="#i-clock"/></svg>
+      <div><h1>City Shuffle</h1><p>Every night from 2 to 4 AM, the city rearranges itself.</p></div>
+    </div>
+    <div class="residents" id="residents" role="group" aria-label="Pick a resident"></div>
+    <div class="clock" aria-live="off">
+      <svg viewBox="0 0 48 48" aria-hidden="true"><use id="clockIcon" href="#i-sun"/></svg>
+      <div><div class="t" id="clockTime">1:59 AM</div><div class="ph" id="clockPhase">Before the shuffle</div></div>
+    </div>
+  </header>
+
+  <nav class="controls" aria-label="Demo controls">
+    <div class="group">
+      <button class="btn primary" id="btnNight" type="button">Start the night</button>
+      <button class="btn" id="btnReset" type="button">Reset</button>
+      <button class="btn" id="btnSeed" type="button">New seed</button>
+      <span class="seed" id="seedLabel"></span>
+      <button class="btn" id="btnStory" type="button">▶ Play story</button>
+    </div>
+    <div class="group">
+      <label class="slider" for="timeSlider">Morning <input type="range" id="timeSlider" min="240" max="420" step="1" value="240" disabled> <span id="sliderLabel">4:00 AM</span></label>
+    </div>
+    <div class="group" role="group" aria-label="What if">
+      <button class="btn" id="btnWrong" type="button" aria-pressed="false">AI map out of date</button>
+      <button class="btn" id="btnOffline" type="button" aria-pressed="false">Network down</button>
+      <button class="btn" id="btnShock" type="button">Aftershock at 11 AM</button>
+    </div>
+  </nav>
+
+  <section class="stage" aria-label="City map">
+    <div class="board-wrap">
+      <div class="board" id="board">
+        <svg class="layer under" id="under" viewBox="0 0 1000 1000" preserveAspectRatio="none" aria-hidden="true"></svg>
+        <svg class="layer over" id="over" viewBox="0 0 1000 1000" preserveAspectRatio="none" aria-hidden="true"></svg>
+        <div class="sky" id="sky"></div>
+        <div class="banner" id="banner" hidden></div>
+      </div>
+    </div>
+    <div class="legend" aria-label="How sure the AI is">
+      <span><i class="sw sure">✓</i>I'm sure</span>
+      <span><i class="sw think">?</i>I think so</span>
+      <span><i class="sw unknown">…</i>I don't know yet</span>
+      <span><svg width="22" height="22" viewBox="0 0 48 48" aria-hidden="true"><use href="#i-pin"/></svg>Anchor: never moves</span>
+    </div>
+  </section>
+
+  <aside class="panel" aria-label="City AI">
+    <div class="card msg" id="msg" aria-live="polite"></div>
+    <details class="card log" id="log" open>
+      <summary>Why the AI did this</summary>
+      <ol id="logList"></ol>
+    </details>
+  </aside>
+</div>
+
+<div class="storybar" id="storybar" hidden>
+  <p id="caption"></p>
+  <div class="sc">
+    <button class="btn" id="stBack" type="button">◀ Back</button>
+    <button class="btn primary" id="stPlay" type="button">Pause</button>
+    <button class="btn" id="stNext" type="button">Next ▶</button>
+    <span class="count" id="stCount"></span>
+    <button class="btn" id="stClose" type="button">Close</button>
+  </div>
+</div>
+
+<script>
+/* =====================================================================
+   CONFIG: all names, places, messages and the story script live here.
+   Edit text freely. Logic below reads from this object.
+   ===================================================================== */
+const CONFIG = {
+  seed: 7,                       // fixed seed: the shuffle is the same every time (good for recording)
+  grid: { cols: 4, rows: 4 },    // 4 x 4 slots, each slot holds one block or anchor (8 x 8 places in total)
+  river: { afterCol: 1, bridgeRows: [1, 3], label: 'RIVER · NEVER MOVES' },
+  time: {                        // minutes after midnight
+    before: 119, nightStart: 120, nightEnd: 240, syncEnd: 260, sliderMax: 420,
+    lastKnown: 370, aftershock: 660, warnMinutes: 5
+  },
+  anchors: [                     // anchors NEVER move
+    { id: 'hospN', kind: 'hospital', name: 'North Hospital', slot: [0, 0] },
+    { id: 'clock', kind: 'clock',    name: 'Old Clock Tower', slot: [2, 1] },
+    { id: 'hospS', kind: 'hospital', name: 'South Hospital', slot: [3, 3] },
+  ],
+  emptyLotName: 'Open ground',
+  // Blocks move as a whole. `at` is the place's position inside the block (col,row in a 2x2).
+  // sensors = total street sensors, early = how many report first. thinkAt/sureAt = minutes after 4:00 AM (null = stays "I think so").
+  blocks: [
+    { id: 'rosewood', name: 'Rosewood', tint: '#F4B7A0', home: [1, 0], sensors: 8, early: 5, thinkAt: 3, sureAt: 9,
+      landmark: { en: 'the bakery', hi: 'बेकरी', icon: 'bakery' },
+      places: [ { id: 'home', icon: 'home', label: "Kamala's Home", hi: 'कमला का घर', at: [0, 0] },
+                { id: 'bakery', icon: 'bakery', label: 'Bakery', hi: 'बेकरी', at: [1, 0] },
+                { id: 'bench', icon: 'bench', label: 'Bench', hi: 'बेंच', at: [0, 1] } ] },
+    { id: 'market', name: 'Market Square', tint: '#E0532F', home: [2, 0], sensors: 10, early: 6, thinkAt: 2, sureAt: 7,
+      landmark: { en: 'the fruit stalls', hi: 'फल की दुकान', icon: 'fruit' },
+      places: [ { id: 'market', icon: 'market', label: 'Market', hi: 'बाज़ार', at: [0, 0] },
+                { id: 'fruit', icon: 'fruit', label: 'Fruit Stall', hi: 'फल की दुकान', at: [1, 0] },
+                { id: 'tea', icon: 'tea', label: 'Tea Stall', hi: 'चाय की दुकान', at: [1, 1] } ] },
+    { id: 'schoolhill', name: 'School Hill', tint: '#F3D27A', home: [3, 0], sensors: 8, early: 4, thinkAt: 6, sureAt: 13,
+      landmark: { en: 'the school gate', hi: 'स्कूल गेट', icon: 'gate' },
+      places: [ { id: 'school', icon: 'school', label: 'School', hi: 'स्कूल', at: [0, 0] },
+                { id: 'gate', icon: 'gate', label: 'School Gate', hi: 'स्कूल गेट', at: [0, 1] } ] },
+    { id: 'banyan', name: 'Banyan Lane', tint: '#7DB36A', home: [0, 1], sensors: 6, early: 3, thinkAt: 5, sureAt: 12,
+      landmark: { en: 'the banyan tree', hi: 'बरगद का पेड़', icon: 'banyan' },
+      places: [ { id: 'pharmacy', icon: 'pharmacy', label: 'Pharmacy', hi: 'दवा की दुकान', at: [0, 0] },
+                { id: 'banyantree', icon: 'banyan', label: 'Banyan Tree', hi: 'बरगद का पेड़', at: [1, 0] } ] },
+    { id: 'lakeview', name: 'Lakeview', tint: '#9CCBDD', home: [1, 1], sensors: 8, early: 4, thinkAt: 4, sureAt: 10,
+      landmark: { en: 'the lake', hi: 'झील', icon: 'lake' },
+      places: [ { id: 'lake', icon: 'lake', label: 'Lake', hi: 'झील', at: [0, 0] },
+                { id: 'bookshop', icon: 'bookshop', label: 'Bookshop', hi: 'किताबों की दुकान', at: [1, 0] },
+                { id: 'bus', icon: 'bus', label: 'Bus Stop', hi: 'बस स्टॉप', at: [1, 1] } ] },
+    { id: 'temple', name: 'Temple Street', tint: '#F2A33A', home: [3, 1], sensors: 6, early: 2, thinkAt: 8, sureAt: 17,
+      landmark: { en: 'the flower shop', hi: 'फूलों की दुकान', icon: 'flower' },
+      places: [ { id: 'oldtemple', icon: 'temple', label: 'Old Temple', hi: 'पुराना मंदिर', at: [0, 0] },
+                { id: 'flower', icon: 'flower', label: 'Flower Shop', hi: 'फूलों की दुकान', at: [1, 1] } ] },
+    { id: 'commons', name: 'Green Commons', tint: '#A6CF8F', home: [0, 2], sensors: 4, early: 2, thinkAt: 9, sureAt: 15,
+      landmark: { en: 'the pond', hi: 'तालाब', icon: 'pond' },
+      places: [ { id: 'park', icon: 'park', label: 'Park', hi: 'पार्क', at: [0, 0] },
+                { id: 'pond', icon: 'pond', label: 'Pond', hi: 'तालाब', at: [1, 1] } ] },
+    { id: 'harbour', name: 'Harbour Row', tint: '#D9C2EA', home: [2, 2], sensors: 8, early: 5, thinkAt: 2, sureAt: 6,
+      landmark: { en: 'the café', hi: 'कैफ़े', icon: 'cafe' },
+      places: [ { id: 'hotel', icon: 'hotel', label: "Hotel (Lena's)", hi: 'होटल', at: [0, 0] },
+                { id: 'cafe', icon: 'cafe', label: 'Café', hi: 'कैफ़े', at: [1, 0] } ] },
+    { id: 'sunrise', name: 'Sunrise Heights', tint: '#BFD6E8', home: [3, 2], sensors: 8, early: 3, thinkAt: 7, sureAt: 14,
+      landmark: { en: 'the playground', hi: 'खेल का मैदान', icon: 'playground' },
+      places: [ { id: 'apts', icon: 'apartments', label: "Apartments (Arjun's customer)", hi: 'अपार्टमेंट', at: [0, 0] },
+                { id: 'playground', icon: 'playground', label: 'Playground', hi: 'खेल का मैदान', at: [1, 1] } ] },
+    { id: 'canal', name: 'Canal Side', tint: '#7FB8CC', home: [0, 3], sensors: 6, early: 3, thinkAt: 5, sureAt: 11,
+      landmark: { en: 'the boat stop', hi: 'नाव घाट', icon: 'boat' },
+      places: [ { id: 'canalp', icon: 'canal', label: 'Canal', hi: 'नहर', at: [0, 0] },
+                { id: 'boat', icon: 'boat', label: 'Boat Stop', hi: 'नाव घाट', at: [1, 0] } ] },
+    { id: 'oldtown', name: 'Old Town', tint: '#C98B5A', home: [1, 3], sensors: 8, early: 3, thinkAt: 10, sureAt: null,
+      landmark: { en: 'the post office', hi: 'डाकघर', icon: 'post' },
+      places: [ { id: 'library', icon: 'library', label: 'Library', hi: 'पुस्तकालय', at: [0, 0] },
+                { id: 'post', icon: 'post', label: 'Post Office', hi: 'डाकघर', at: [1, 1] } ] },
+    { id: 'festival', name: 'Festival Ground', tint: '#F2C25B', home: [2, 3], sensors: 6, early: 2, thinkAt: 12, sureAt: 20,
+      landmark: { en: 'the food carts', hi: 'खाने के ठेले', icon: 'foodcart' },
+      places: [ { id: 'fest', icon: 'festival', label: 'Festival Ground', hi: 'मेला मैदान', at: [0, 0] },
+                { id: 'carts', icon: 'foodcart', label: 'Food Carts', hi: 'खाने के ठेले', at: [1, 1] } ] },
+  ],
+  residents: {
+    kamala: { name: 'Kamala', age: 75, color: '#C6553A', tag: 'Home → Pharmacy · Thursday', from: 'home', to: 'pharmacy' },
+    arjun:  { name: 'Arjun',  age: 24, color: '#2E7DA8', tag: 'Delivery rider · 3 orders', start: 'market', orders: ['apts', 'school', 'library'] },
+    lena:   { name: 'Lena',   age: 29, color: '#7A4FA0', tag: 'Tourist · Hotel → Old Temple', from: 'hotel', to: 'oldtemple' },
+  },
+  levels: {
+    sure:    { label: "I'm sure",         glyph: '✓' },
+    think:   { label: 'I think so',       glyph: '?' },
+    unknown: { label: "I don't know yet", glyph: '…' },
+  },
+  wrong: { prefer: 'lakeview', lagMinutes: 20, peopleHelped: 214 },
+  offline: { lastKnownLabel: '6:10 AM', changes: [ { block: 'oldtown', to: 'sure' } ] },
+  aftershock: { block: 'sunrise' },
+
+  text: {
+    en: {
+      eve: "This is yesterday's map. Tonight, between 2 and 4 AM, the city will move.",
+      night: "The city is moving right now. I'll know the new layout after 4 AM.",
+      warn: "I'm not sure about this area yet. I'll update you in 5 min.",
+      reached: 'You are in {block}. My map says "I\'m sure" about it.',
+      walking: '{who} is walking…',
+      report: "This doesn't look right",
+      reveal: "Show what the AI believed vs what's real",
+      hideReveal: 'Hide the comparison',
+      sorry: 'Sorry, I was wrong. My sensors in {block} were {lag} minutes behind, so my map showed the old layout. I\'ve marked {block} "I don\'t know yet" and found you a new way.',
+      thanks: 'Thanks, {n} people near you will get the corrected map.',
+      ghostNote: 'The dashed outline shows where I wrongly thought {block} was.',
+      offHead: "I've lost the network. Last known layout: {t}.",
+      offAnchors: 'Follow the fixed anchors: the clock tower and the river never move.',
+      offGuide: 'Ask a Shift Guide nearby. Look for the yellow vest.',
+      offMesh: 'Phones nearby are sharing the map with each other.',
+      back: "I'm back online. {n} block(s) changed while I was offline. They blinked once on the map.",
+    },
+    hi: {
+      eve: 'यह कल का नक्शा है। आज रात 2 से 4 बजे के बीच शहर बदलेगा।',
+      night: 'शहर अभी बदल रहा है। सुबह 4 बजे के बाद नया नक्शा बताऊँगा।',
+      warn: 'मुझे इस इलाके के बारे में अभी पक्का नहीं पता। मैं 5 मिनट में बताऊँगा।',
+      reached: 'आप {block} में हैं। मेरे नक्शे के हिसाब से यह पक्का है।',
+      walking: '{who} चल रही हैं…',
+      report: 'यह सही नहीं लग रहा',
+      reveal: 'AI ने क्या सोचा, असल में क्या है',
+      hideReveal: 'तुलना छिपाएँ',
+      sorry: 'माफ़ कीजिए, मैं ग़लत था। {block} में मेरे सेंसर {lag} मिनट पीछे थे। मैंने {block} को "अभी पता नहीं" कर दिया है और नया रास्ता ढूँढ लिया है।',
+      thanks: 'धन्यवाद! आपके पास के {n} लोगों को सही नक्शा मिलेगा।',
+      ghostNote: 'डैश वाली रेखा दिखाती है कि मैंने {block} को ग़लत जगह समझा था।',
+      offHead: 'नेटवर्क नहीं है। आख़िरी नक्शा: {t}',
+      offAnchors: 'घंटाघर और नदी कभी नहीं हिलते। उनके साथ चलें।',
+      offGuide: 'पास के शिफ़्ट गाइड से पूछें (पीली जैकेट)।',
+      offMesh: 'पास के फ़ोन आपस में नक्शा बाँट रहे हैं।',
+      back: 'नेटवर्क वापस आ गया। {n} ब्लॉक बदले, वे नक्शे पर एक बार चमके।',
+    },
+    kamala: {
+      movedHead: 'Your pharmacy has moved, but it is still next to the banyan tree.',
+      sameHead: 'Your pharmacy is where it was yesterday, next to the banyan tree.',
+      day: "It's Thursday, your pharmacy day. Here is the way:",
+      bridge: 'Cross the river on the bridge.',
+      clock: 'Walk towards the old clock tower.',
+      hospital: 'Walk past the {name}.',
+      lot: 'Walk across the open ground.',
+      block: 'Walk past {landmark} in {block}.',
+      arrive: 'The pharmacy is right next to the banyan tree.',
+      avoid: "I'm taking you the long way, around {names}. I don't know those streets yet.",
+      read: 'Read aloud', stop: 'Stop reading', noSpeech: 'Read aloud is not available in this browser.',
+    },
+    arjun: {
+      eve: 'Shuffle tonight', night: 'City moving',
+      orders: 'Orders', unsure: 'Unsure area ahead', resorted: 'Orders re-sorted',
+      pay: 'Delay caused by city shift. Your pay is protected.', buzz: 'Handlebar buzz',
+    },
+    lena: {
+      en: { head: 'To the Old Temple', mins: '{n} min walk', start: 'Hotel', arrive: 'Here!', bridge: 'Bridge', clock: 'Clock tower',
+            hospital: 'Hospital', lot: 'Open ground', avoid: 'Avoiding an unclear area' },
+      hi: { head: 'पुराने मंदिर तक', mins: '{n} मिनट पैदल', start: 'होटल', arrive: 'पहुँच गए!', bridge: 'पुल', clock: 'घंटाघर',
+            hospital: 'अस्पताल', lot: 'खुला मैदान', avoid: 'अनजान इलाके से बचकर' },
+    },
+  },
+
+  // The AI decision log ("Why the AI did this"): one plain sentence per decision.
+  log: {
+    start: 'The shuffle started. Street sensors pause until 4:00 AM.',
+    allUnknown: 'Marked every block "I don\'t know yet": the whole city just moved.',
+    think: 'Marked {block} "I think so": only {k} of {n} sensors reported.',
+    stuck: 'Kept {block} at "I think so": only {k} of {n} sensors are working.',
+    sure: 'Marked {block} "I\'m sure": all {n} sensors agree.',
+    avoid: 'Routed {who} around {names}: I don\'t know those blocks yet.',
+    warn: 'Warned {who}: the route passes {names}, and I\'m not sure about it.',
+    report: '{who} said "This doesn\'t look right" in {block}.',
+    fix: 'My sensors in {block} were {lag} min behind. Marked it "I don\'t know yet" and swapped it back with {other}.',
+    share: 'Sent the corrected map to {n} people nearby.',
+    offline: 'Lost the network. Showing the last known layout from {t}.',
+    mesh: 'Asked phones nearby to share the map with each other.',
+    online: 'Network is back. {n} block(s) changed while offline.',
+    offChange: '{block} sensors came back while I was offline. Now "I\'m sure".',
+    shockWarn: 'Warned everyone near {block}: an aftershock will move it in 5 minutes.',
+    shock: '{block} moved to a new place. Marked it "I think so" until sensors confirm.',
+    shockSure: 'Sensors confirm the new place of {block}. Now "I\'m sure".',
+    resort: "Re-sorted Arjun's orders after the shift. His pay is protected for the delay.",
+    noWrong: 'No block on {who}\'s route to test. Try another resident.',
+  },
+
+  // Story mode script. `do` names a step (see ACTIONS in the code). `ms` = how long the caption stays.
+  story: [
+    { do: 'reset',   ms: 5000,  caption: 'Meet our city. Every night between 2 and 4 AM, it rearranges itself.' },
+    { do: 'night',   ms: 8000,  caption: '2:00 AM. Whole neighbourhoods swap places. Inside each block, places stay together.' },
+    { do: 'anchors', ms: 5500,  caption: 'Anchors never move: the two hospitals, the river and the old clock tower.' },
+    { do: 'sync',    ms: 10000, caption: "4:00 AM. The AI doesn't know the new map yet. It learns it block by block from street sensors." },
+    { do: 'kamala',  ms: 9000,  caption: '7:00 AM, Thursday. Kamala, 75, needs her pharmacy. The AI talks in landmarks, not map words.' },
+    { do: 'wrong',   ms: 7500,  caption: 'But the AI is sure about one block, and it is wrong.' },
+    { do: 'report',  ms: 10000, caption: 'Kamala taps "This doesn\'t look right". The AI says sorry, explains, and finds a new way.' },
+    { do: 'offline', ms: 10000, caption: 'Then the network goes down. The AI shows its last known map and falls back on anchors, guides and nearby phones.' },
+    { do: 'online',  ms: 7000,  caption: 'The network is back. Blocks that changed while offline blink once.' },
+    { do: 'end',     ms: 6000,  caption: 'City Shuffle: an AI that tells you when it is sure, when it is guessing, and when it was wrong.' },
+  ],
+};
+
+/* =====================================================================
+   Helpers
+   ===================================================================== */
+const $ = s => document.querySelector(s);
+const RM = window.matchMedia && matchMedia('(prefers-reduced-motion: reduce)').matches;
+const fill = (s, o) => s.replace(/\{(\w+)\}/g, (_, k) => (o[k] ?? ''));
+const esc = s => String(s).replace(/[&<>"]/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]));
+const icon = (id, cls = '') => `<svg class="${cls}" viewBox="0 0 48 48" aria-hidden="true"><use href="#i-${id}"/></svg>`;
+const wait = ms => new Promise(r => setTimeout(r, ms));
+function mulberry32(a) { return function () { a |= 0; a = a + 0x6D2B79F5 | 0; let t = Math.imul(a ^ a >>> 15, 1 | a); t = t + Math.imul(t ^ t >>> 7, 61 | t) ^ t; return ((t ^ t >>> 14) >>> 0) / 4294967296; }; }
+function fmt(m) { m = Math.round(m); const h = Math.floor(m / 60) % 24, mm = String(m % 60).padStart(2, '0'); return `${h % 12 || 12}:${mm} ${h < 12 ? 'AM' : 'PM'}`; }
+const listNames = a => a.length <= 1 ? (a[0] || '') : a.slice(0, -1).join(', ') + ' and ' + a[a.length - 1];
+
+const C = CONFIG.grid.cols, R = CONFIG.grid.rows, N = C * R;
+const sIdx = ([c, r]) => r * C + c, sCol = s => s % C, sRow = s => Math.floor(s / C);
+const GEO = { x: [20, 250.5, 535, 765.5], y: [20, 264, 508, 752], w: 214.5, h: 228 };
+const center = s => ({ x: GEO.x[sCol(s)] + GEO.w / 2, y: GEO.y[sRow(s)] + GEO.h / 2 });
+const BLOCKS = CONFIG.blocks, BY = {}; BLOCKS.forEach(b => BY[b.id] = b);
+const PLACE = {}; BLOCKS.forEach(b => b.places.forEach(p => PLACE[p.id] = { ...p, block: b.id }));
+const ANCHOR_AT = {}; CONFIG.anchors.forEach(a => ANCHOR_AT[sIdx(a.slot)] = a);
+const MOVABLE = [...Array(N).keys()].filter(s => !ANCHOR_AT[s]);
+const homeLayout = () => Object.fromEntries(BLOCKS.map(b => [b.id, sIdx(b.home)]));
+
+/* =====================================================================
+   Routing (Dijkstra over the 4x4 slots; river crossable only at bridges)
+   ===================================================================== */
+function occupancy(pos) {
+  const occ = Array.from({ length: N }, () => ({ type: 'lot' }));
+  for (const s in ANCHOR_AT) occ[s] = { type: 'anchor', id: ANCHOR_AT[s].id, a: ANCHOR_AT[s] };
+  for (const id in pos) occ[pos[id]] = { type: 'block', id };
+  return occ;
+}
+const crossesRiver = (a, b) => Math.min(a, b) === CONFIG.river.afterCol && Math.max(a, b) === CONFIG.river.afterCol + 1;
+function neighbors(s) {
+  const c = sCol(s), r = sRow(s), out = [];
+  for (const [dc, dr] of [[1, 0], [-1, 0], [0, 1], [0, -1]]) {
+    const nc = c + dc, nr = r + dr;
+    if (nc < 0 || nr < 0 || nc >= C || nr >= R) continue;
+    if (dc && crossesRiver(c, nc) && !CONFIG.river.bridgeRows.includes(r)) continue;
+    out.push(nr * C + nc);
+  }
+  return out;
+}
+function findPath(from, to, pos, costFn) {
+  const occ = occupancy(pos), dist = Array(N).fill(Infinity), prev = Array(N).fill(-1), done = Array(N).fill(false);
+  dist[from] = 0;
+  for (;;) {
+    let u = -1;
+    for (let i = 0; i < N; i++) if (!done[i] && dist[i] < Infinity && (u < 0 || dist[i] < dist[u])) u = i;
+    if (u < 0 || u === to) break;
+    done[u] = true;
+    for (const v of neighbors(u)) { const d = dist[u] + costFn(occ[v]); if (d < dist[v] - 1e-9) { dist[v] = d; prev[v] = u; } }
+  }
+  if (dist[to] === Infinity) return null;
+  const path = []; for (let v = to; v !== -1; v = prev[v]) path.unshift(v);
+  return { path, cost: dist[to] };
+}
+const uniformCost = () => 1;
+const aiCost = o => o.type === 'block' ? { sure: 1, think: 2.5, unknown: 9 }[level(o.id)] : 1;
+const slotOfPlace = (pid, pos) => pos[PLACE[pid].block];
+
+function planArjun(pos, costFn) {
+  const r = CONFIG.residents.arjun;
+  let cur = slotOfPlace(r.start, pos), left = r.orders.slice();
+  const order = [], legs = [];
+  while (left.length) {
+    let best = null;
+    for (const o of left) { const res = findPath(cur, slotOfPlace(o, pos), pos, costFn); if (res && (!best || res.cost < best.res.cost)) best = { o, res }; }
+    if (!best) break;
+    order.push(best.o); legs.push(best.res.path); cur = best.res.path[best.res.path.length - 1];
+    left = left.filter(x => x !== best.o);
+  }
+  return { order, legs };
+}
+function planFor(who, pos, costFn) {
+  if (who === 'arjun') {
+    const p = planArjun(pos, costFn), path = [];
+    p.legs.forEach((l, i) => path.push(...(i ? l.slice(1) : l)));
+    return { path, legs: p.legs, order: p.order };
+  }
+  const r = CONFIG.residents[who], res = findPath(slotOfPlace(r.from, pos), slotOfPlace(r.to, pos), pos, costFn);
+  return { path: res ? res.path : [], legs: res ? [res.path] : [] };
+}
+function endpointBlocks(who) {
+  const r = CONFIG.residents[who];
+  const ids = who === 'arjun' ? [r.start, ...r.orders] : [r.from, r.to];
+  return ids.map(p => PLACE[p].block);
+}
+
+/* =====================================================================
+   Seeded shuffle: every block moves; anchors stay; one slot is left open.
+   ===================================================================== */
+function computeShuffle(seed) {
+  const rng = mulberry32(seed);
+  let pos = null;
+  for (let tries = 0; tries < 800; tries++) {
+    const arr = MOVABLE.slice();
+    for (let i = arr.length - 1; i > 0; i--) { const j = Math.floor(rng() * (i + 1)); [arr[i], arr[j]] = [arr[j], arr[i]]; }
+    pos = {}; BLOCKS.forEach((b, i) => pos[b.id] = arr[i]);
+    if (BLOCKS.some(b => pos[b.id] === sIdx(b.home))) continue;
+    const occ = occupancy(pos);
+    const k = planFor('kamala', pos, uniformCost).path, l = planFor('lena', pos, uniformCost).path;
+    if (k.length < 4 || l.length < 3) continue;
+    if (!k.slice(1, -1).some(s => occ[s].type === 'block')) continue;
+    return pos;
+  }
+  return pos;
+}
+
+/* =====================================================================
+   State
+   ===================================================================== */
+let S = null;
+function freshState(seed) {
+  return {
+    seed, phase: 'eve', time: CONFIG.time.before, synced: false, animating: false,
+    belief: homeLayout(), real: homeLayout(), shuffled: computeShuffle(seed),
+    overrides: {}, resident: S ? S.resident : 'kamala', lang: S ? S.lang : 'en',
+    offline: false, wrong: null, shock: null, notice: null,
+    log: [], logged: new Set(), blink: new Set(), walker: null,
+    epoch: (S ? S.epoch : 0) + 1, speaking: false,
+  };
+}
+function level(id) {
+  if (S.phase === 'eve') return 'sure';
+  if (S.phase === 'night') return 'unknown';
+  if (S.overrides[id]) return S.overrides[id];
+  const t = S.offline ? Math.min(S.time, CONFIG.time.lastKnown) : S.time, b = BY[id], m = t - CONFIG.time.nightEnd;
+  if (m < b.thinkAt) return 'unknown';
+  if (b.sureAt == null || m < b.sureAt) return 'think';
+  return 'sure';
+}
+function addLog(text, key, t = S.time) {
+  if (key) { if (S.logged.has(key)) return; S.logged.add(key); }
+  S.log.push({ t, text });
+}
+function logSync(from, to) {
+  const ev = [];
+  for (const b of BLOCKS) {
+    if (S.overrides[b.id]) continue;
+    const tt = CONFIG.time.nightEnd + b.thinkAt, ts = b.sureAt == null ? null : CONFIG.time.nightEnd + b.sureAt;
+    if (tt > from && tt <= to) ev.push({ t: tt, key: 'th' + b.id, text: fill(CONFIG.log[b.sureAt == null ? 'stuck' : 'think'], { block: b.name, k: b.early, n: b.sensors }) });
+    if (ts != null && ts > from && ts <= to) ev.push({ t: ts, key: 'su' + b.id, text: fill(CONFIG.log.sure, { block: b.name, n: b.sensors }) });
+  }
+  ev.sort((a, b) => a.t - b.t).forEach(e => addLog(e.text, e.key, e.t));
+}
+function setTime(t) {
+  t = Math.round(t);
+  if (S.phase === 'day' && t > S.time) logSync(S.time, t);
+  S.time = t;
+  render();
+}
+function animateTime(from, to, ms) {
+  const ep = S.epoch;
+  if (RM || ms <= 0) { setTime(to); return Promise.resolve(); }
+  return new Promise(res => {
+    const t0 = performance.now();
+    const step = now => {
+      if (S.epoch !== ep) return res();
+      const k = Math.min(1, (now - t0) / ms);
+      setTime(from + (to - from) * k);
+      if (k < 1) requestAnimationFrame(step); else res();
+    };
+    requestAnimationFrame(step);
+  });
+}
+
+/* =====================================================================
+   Board DOM
+   ===================================================================== */
+const board = $('#board'), blockEls = {}, anchorEls = {};
+let lotEl;
+function placeEl(el, s) {
+  el.style.left = GEO.x[sCol(s)] / 10 + '%'; el.style.top = GEO.y[sRow(s)] / 10 + '%';
+  el.style.width = GEO.w / 10 + '%'; el.style.height = GEO.h / 10 + '%';
+}
+function buildBoard() {
+  // river + bridges (anchor, never moves)
+  const rx = 500, by = CONFIG.river.bridgeRows.map(r => GEO.y[r] + GEO.h / 2);
+  $('#under').innerHTML = `
+    <path d="M500 -10 C468 120 532 210 500 330 S468 560 500 660 S532 880 500 1010" stroke="#9CCBDD" stroke-width="58" fill="none"/>
+    <path d="M500 -10 C468 120 532 210 500 330 S468 560 500 660 S532 880 500 1010" stroke="#BFE0EC" stroke-width="20" fill="none" stroke-dasharray="26 34" stroke-linecap="round"/>
+    <path d="M471 -10 C439 120 503 210 471 330 S439 560 471 660 S503 880 471 1010 M529 -10 C497 120 561 210 529 330 S497 560 529 660 S561 880 529 1010" stroke="#2F3447" stroke-width="2.5" fill="none" opacity=".55"/>
+    ${by.map(y => `<g><rect x="${rx - 50}" y="${y - 20}" width="100" height="40" rx="8" fill="#D9C7A3" stroke="#2F3447" stroke-width="3"/>
+      <path d="M${rx - 42} ${y - 9}h84M${rx - 42} ${y + 9}h84" stroke="#2F3447" stroke-width="2" stroke-dasharray="4 6"/></g>`).join('')}
+    <g transform="translate(${rx + 9} 640) rotate(-90)"><text text-anchor="middle" font-family="Nunito, sans-serif" font-weight="900" font-size="21" fill="#2C5E73" letter-spacing="2">${esc(CONFIG.river.label)}</text></g>`;
+  // anchors
+  CONFIG.anchors.forEach(a => {
+    const el = document.createElement('div');
+    el.className = 'slot anchor';
+    el.setAttribute('role', 'img');
+    el.setAttribute('aria-label', `${a.name}. Anchor: never moves.`);
+    el.innerHTML = `${icon(a.kind)}<div class="aname">${esc(a.name)}</div><div class="never">Never moves</div>${icon('pin', 'pin')}`;
+    placeEl(el, sIdx(a.slot)); board.appendChild(el); anchorEls[a.id] = el;
+  });
+  lotEl = document.createElement('div'); lotEl.className = 'slot lot'; lotEl.textContent = CONFIG.emptyLotName; lotEl.setAttribute('aria-hidden', 'true');
+  board.appendChild(lotEl);
+  BLOCKS.forEach(b => {
+    const el = document.createElement('div');
+    el.className = 'slot block'; el.style.setProperty('--tint', b.tint); el.setAttribute('role', 'img');
+    el.innerHTML = `<div class="bname"><i></i><span>${esc(b.name)}</span></div>
+      <div class="places">${b.places.map(p => `<div class="place" data-place="${p.id}" style="grid-column:${p.at[0] + 1};grid-row:${p.at[1] + 1}">${icon(p.icon)}<span>${esc(p.label)}</span></div>`).join('')}</div>
+      <div class="chip"><b class="g"></b><span class="l"></span></div><span class="qmark" aria-hidden="true">?</span><div class="fog" aria-hidden="true"></div>`;
+    board.appendChild(el); blockEls[b.id] = el;
+  });
+  // resident buttons
+  $('#residents').innerHTML = Object.entries(CONFIG.residents).map(([k, r]) =>
+    `<button type="button" class="res" data-res="${k}" aria-pressed="false"><span class="ava" style="background:${r.color}">${r.name[0]}</span>${esc(r.name)} <small>${r.age}</small></button>`).join('');
+}
+
+function flipMove(change, { dur = 2500, stagger = 70, instant = false } = {}) {
+  const els = BLOCKS.map(b => blockEls[b.id]);
+  const first = new Map(els.map(e => [e, e.getBoundingClientRect()]));
+  change(); render();
+  if (instant || RM) return Promise.resolve();
+  const moved = [];
+  els.forEach(e => {
+    const a = first.get(e), b = e.getBoundingClientRect(), dx = a.left - b.left, dy = a.top - b.top;
+    if (Math.abs(dx) < 1 && Math.abs(dy) < 1) return;
+    e.style.transition = 'none'; e.style.transform = `translate(${dx}px,${dy}px)`; e.classList.add('moving'); moved.push(e);
+  });
+  void board.offsetWidth;
+  moved.forEach((e, i) => { e.style.transition = `transform ${dur}ms cubic-bezier(.65,.05,.25,1) ${i * stagger}ms`; e.style.transform = ''; });
+  return wait(dur + moved.length * stagger + 50).then(() => moved.forEach(e => { e.classList.remove('moving'); e.style.transition = ''; }));
+}
+function clearMotion() { BLOCKS.forEach(b => { const e = blockEls[b.id]; e.style.transition = 'none'; e.style.transform = ''; e.classList.remove('moving', 'blink'); }); }
+
+/* =====================================================================
+   Route + overlay drawing
+   ===================================================================== */
+function currentRoute() {
+  if (S.phase === 'night') return null;
+  const who = S.resident, plan = planFor(who, S.belief, aiCost), occ = occupancy(S.belief);
+  const blocksOn = plan.path.map(s => occ[s]).filter(o => o.type === 'block').map(o => o.id);
+  const unknownIds = [...new Set(blocksOn.filter(id => level(id) === 'unknown'))];
+  const uni = planFor(who, S.belief, uniformCost), onSet = new Set(blocksOn);
+  const avoidedIds = [...new Set(uni.path.map(s => occ[s]).filter(o => o.type === 'block' && !onSet.has(o.id) && level(o.id) === 'unknown').map(o => o.id))];
+  return { ...plan, occ, unknownIds, avoidedIds };
+}
+function overlaySVG(rt) {
+  let h = '';
+  const w = S.wrong;
+  if (w && (w.reveal || w.corrected)) {
+    const ghost = (s, label, color) => `<g><rect x="${GEO.x[sCol(s)] + 4}" y="${GEO.y[sRow(s)] + 4}" width="${GEO.w - 8}" height="${GEO.h - 8}" rx="18" fill="${color}" fill-opacity=".1" stroke="${color}" stroke-width="5" stroke-dasharray="14 10"/>
+      <rect x="${GEO.x[sCol(s)] + 10}" y="${GEO.y[sRow(s)] + GEO.h - 70}" width="${GEO.w - 20}" height="60" rx="10" fill="#fff" stroke="${color}" stroke-width="2.5"/>
+      ${label.map((t, i) => `<text x="${center(s).x}" y="${GEO.y[sRow(s)] + GEO.h - 46 + i * 23}" text-anchor="middle" font-family="Nunito, sans-serif" font-size="18" font-weight="900" fill="#2F3447">${esc(t)}</text>`).join('')}</g>`;
+    if (w.corrected) h += ghost(w.believed, ['AI believed', `${BY[w.id].name} was here`], '#E0532F');
+    else { h += ghost(w.believed, ['AI thinks', `${BY[w.id].name} is here`], '#E0532F') + ghost(w.realSlot, ['Real', `${BY[w.id].name} is here`], '#2E7D4F'); }
+  }
+  if (rt && rt.path.length > 1) {
+    const pts = rt.path.map(center), d = 'M' + pts.map(p => `${p.x} ${p.y}`).join(' L');
+    h += `<path d="${d}" fill="none" stroke="#fff" stroke-width="22" stroke-linecap="round" stroke-linejoin="round" opacity=".7"/>
+          <path d="${d}" fill="none" stroke="#E0532F" stroke-width="12" stroke-linecap="round" stroke-linejoin="round" stroke-dasharray="${S.resident === 'arjun' ? '0' : '1 22'}"/>`;
+    const r = CONFIG.residents[S.resident], a = pts[0], z = pts[pts.length - 1];
+    h += `<g><circle cx="${a.x}" cy="${a.y}" r="24" fill="${r.color}" stroke="#2F3447" stroke-width="4"/><text x="${a.x}" y="${a.y + 8}" text-anchor="middle" font-family="Nunito, sans-serif" font-weight="900" font-size="24" fill="#fff">${r.name[0]}</text></g>`;
+    if (S.resident === 'arjun') {
+      rt.legs.forEach((l, i) => { const p = center(l[l.length - 1]); h += `<g><circle cx="${p.x}" cy="${p.y}" r="21" fill="#2F3447" stroke="#fff" stroke-width="4"/><text x="${p.x}" y="${p.y + 8}" text-anchor="middle" font-family="Nunito, sans-serif" font-weight="900" font-size="22" fill="#fff">${i + 1}</text></g>`; });
+    } else {
+      h += `<g transform="translate(${z.x - 6} ${z.y - 58})"><path d="M6 60V4" stroke="#2F3447" stroke-width="5" stroke-linecap="round"/><path d="M6 6h38l-8 12 8 12H6z" fill="#E0532F" stroke="#2F3447" stroke-width="4" stroke-linejoin="round"/></g>`;
+    }
+  }
+  if (S.walker) h += `<circle cx="${S.walker.x}" cy="${S.walker.y}" r="17" fill="#fff" stroke="#E0532F" stroke-width="7"/>`;
+  if (S.offline) {
+    const P = [[242, 380], [650, 256], [757, 622], [380, 744], [138, 744]];
+    const links = [[0, 1], [1, 2], [2, 3], [3, 4], [4, 0], [0, 3]];
+    links.forEach(([i, j], n) => {
+      const [x1, y1] = P[i], [x2, y2] = P[j], path = n % 2 ? `M${x2} ${y2}L${x1} ${y1}` : `M${x1} ${y1}L${x2} ${y2}`;
+      h += `<path d="M${x1} ${y1}L${x2} ${y2}" stroke="#2E7D4F" stroke-width="3" stroke-dasharray="4 10" opacity=".7"/>`;
+      h += RM ? `<circle cx="${(x1 + x2) / 2}" cy="${(y1 + y2) / 2}" r="8" fill="#2E7D4F"/>`
+              : `<circle r="8" fill="#2E7D4F" stroke="#fff" stroke-width="3"><animateMotion dur="${1.6 + n * .25}s" repeatCount="indefinite" path="${path}"/></circle>`;
+    });
+    P.forEach(([x, y]) => h += `<use href="#i-phone" x="${x - 26}" y="${y - 26}" width="52" height="52"/>`);
+  }
+  return h;
+}
+
+/* =====================================================================
+   Messages per resident
+   ===================================================================== */
+function landmarkSteps(rt) {
+  const steps = [], p = rt.path;
+  for (let i = 1; i < p.length; i++) {
+    if (crossesRiver(sCol(p[i - 1]), sCol(p[i])) && sRow(p[i]) === sRow(p[i - 1])) steps.push({ kind: 'bridge' });
+    const o = rt.occ[p[i]];
+    if (S.resident === 'arjun') continue;
+    if (i === p.length - 1) { steps.push({ kind: 'arrive' }); break; }
+    if (o.type === 'anchor') steps.push({ kind: o.a.kind === 'clock' ? 'clock' : 'hospital', name: o.a.name });
+    else if (o.type === 'lot') steps.push({ kind: 'lot' });
+    else steps.push({ kind: 'block', id: o.id });
+  }
+  return steps;
+}
+function maneuvers(rt) {
+  const p = rt.path, out = [];
+  let idx = 0; const stopIdx = new Set(); rt.legs.forEach((l, i) => { idx += i ? l.length - 1 : l.length - 1; stopIdx.add(idx); });
+  for (let i = 1; i < p.length - 1; i++) {
+    const hx = sCol(p[i]) - sCol(p[i - 1]), hy = sRow(p[i]) - sRow(p[i - 1]), nx = sCol(p[i + 1]) - sCol(p[i]), ny = sRow(p[i + 1]) - sRow(p[i]);
+    if (stopIdx.has(i)) { out.push('stop'); continue; }
+    const cr = hx * ny - hy * nx;
+    out.push(cr > 0 ? 'right' : cr < 0 ? 'left' : 'straight');
+  }
+  out.push('arrive');
+  const comp = []; out.forEach(m => { if (!(m === 'straight' && comp[comp.length - 1] === 'straight')) comp.push(m); });
+  return comp;
+}
+const ARROWS = {
+  straight: '<path d="M24 42V8M11 20 24 7l13 13"/>',
+  left: '<path d="M34 42V26a8 8 0 0 0-8-8H10M19 9l-9 9 9 9"/>',
+  right: '<path d="M14 42V26a8 8 0 0 1 8-8h16M29 9l9 9-9 9"/>',
+};
+function arrowSVG(m, color) {
+  if (m === 'stop') return icon('package');
+  if (m === 'arrive') return icon('flag');
+  return `<svg viewBox="0 0 48 48" aria-hidden="true"><g fill="none" stroke="${color}" stroke-width="5" stroke-linecap="round" stroke-linejoin="round">${ARROWS[m]}</g></svg>`;
+}
+
+function personaHTML() {
+  const r = CONFIG.residents[S.resident];
+  const lang = S.resident === 'lena' ? `<div class="spacer"></div><div class="lang" role="group" aria-label="Language">
+    <button class="btn" type="button" data-act="lang-en" aria-pressed="${S.lang === 'en'}">EN</button>
+    <button class="btn" type="button" data-act="lang-hi" aria-pressed="${S.lang === 'hi'}" lang="hi">हिन्दी</button></div>` : '';
+  return `<div class="who"><span class="ava" style="background:${r.color}">${r.name[0]}</span><div><div class="who-n">${esc(r.name)}, ${r.age}</div><div class="who-t">${esc(r.tag)}</div></div>${lang}</div>
+    <div class="ai">${icon('spark')} City AI</div>`;
+}
+function scenarioHTML(rt, L) {
+  let h = '';
+  const T = CONFIG.text[L], w = S.wrong;
+  if (w) {
+    const bn = BY[w.id].name, r = CONFIG.residents[S.resident];
+    if (!w.corrected) {
+      if (!w.reached) h += `<p class="note warn">${icon('walk')}<span>${esc(fill(T.walking, { who: r.name }))}</span></p>`;
+      else h += `<div class="wrongbox"><p>${esc(fill(T.reached, { block: bn }))}</p>
+        <button class="btn primary big" type="button" data-act="report">${esc(T.report)}</button>
+        <button class="linkbtn" type="button" data-act="reveal" aria-pressed="${!!w.reveal}">${esc(w.reveal ? T.hideReveal : T.reveal)}</button></div>`;
+    } else {
+      h += `<div class="sorry"><p><b>${esc(fill(T.sorry, { block: bn, lag: CONFIG.wrong.lagMinutes }))}</b></p>
+        <p class="thanks">${icon('heart')}<span>${esc(fill(T.thanks, { n: CONFIG.wrong.peopleHelped }))}</span></p>
+        <p style="color:var(--ink-soft)">${esc(fill(T.ghostNote, { block: bn }))}</p></div>`;
+    }
+  }
+  const wrongH = h; h = '';   // newest news (network) goes on top
+  if (S.offline) {
+    h += `<div class="offline"><h3>${esc(fill(T.offHead, { t: CONFIG.offline.lastKnownLabel }))}</h3><ul class="tips">
+      <li>${icon('clock')}<span>${esc(T.offAnchors)}</span></li><li>${icon('guide')}<span>${esc(T.offGuide)}</span></li>
+      <li>${icon('phone')}<span>${esc(T.offMesh)}</span></li></ul></div>`;
+  } else if (S.notice) {
+    h += `<p class="note ok">${icon('spark')}<span>${esc(fill(T.back, { n: S.notice.n }))}</span></p>`;
+  }
+  return h + wrongH;
+}
+function warnHTML(rt, L) {
+  if (!rt || !rt.unknownIds.length) return '';
+  return `<div class="note warn">${icon('fog')}<span><b>${esc(CONFIG.text[L].warn)}</b></span></div>`;
+}
+
+function kamalaHTML(rt) {
+  const K = CONFIG.text.kamala, E = CONFIG.text.en;
+  if (S.phase === 'eve') return `<div class="k"><p>${esc(E.eve)}</p>${kamalaBody(rt, true)}</div>`;
+  if (S.phase === 'night') return `<div class="k"><h2>${esc(E.night)}</h2></div>`;
+  return `<div class="k">${kamalaBody(rt, false)}</div>`;
+}
+function kamalaText(rt, eve) {
+  const K = CONFIG.text.kamala, moved = S.real.banyan !== sIdx(BY.banyan.home);
+  const lines = [];
+  lines.push(eve ? K.sameHead : (moved ? K.movedHead : K.sameHead));
+  const steps = landmarkSteps(rt).map(s => {
+    if (s.kind === 'bridge') return K.bridge;
+    if (s.kind === 'clock') return K.clock;
+    if (s.kind === 'hospital') return fill(K.hospital, { name: s.name });
+    if (s.kind === 'lot') return K.lot;
+    if (s.kind === 'arrive') return K.arrive;
+    return fill(K.block, { landmark: BY[s.id].landmark.en, block: BY[s.id].name });
+  });
+  return { head: lines[0], steps };
+}
+function kamalaBody(rt, eve) {
+  const K = CONFIG.text.kamala, kt = kamalaText(rt, eve);
+  let h = `<h2>${esc(kt.head)}</h2>`;
+  if (!eve) h += `<p class="small">${esc(K.day)}</p>`;
+  h += warnHTML(rt, 'en');
+  if (rt.avoidedIds.length) h += `<div class="note avoid">${icon('fog')}<span>${esc(fill(K.avoid, { names: listNames(rt.avoidedIds.map(id => BY[id].name)) }))}</span></div>`;
+  h += `<ol>${kt.steps.map(s => `<li>${esc(s)}</li>`).join('')}</ol>`;
+  const can = 'speechSynthesis' in window;
+  h += `<button class="btn read" type="button" data-act="read" ${can ? '' : 'disabled'}>${icon('speaker')}${esc(S.speaking ? K.stop : K.read)}</button>`;
+  if (!can) h += `<p class="small">${esc(K.noSpeech)}</p>`;
+  return h;
+}
+function arjunHTML(rt) {
+  const A = CONFIG.text.arjun;
+  if (S.phase === 'night') return `<div class="arj"><div class="bigarrow">${icon('moon')}</div><b>${esc(A.night)}</b></div>`;
+  const ms = maneuvers(rt), next = ms.find(m => m === 'left' || m === 'right') || ms[0];
+  const firstTurn = ms.find(m => m === 'left' || m === 'right');
+  let h = `<div class="arj"><div class="bigarrow" role="img" aria-label="Next: ${next}">${arrowSVG(next, '#fff')}</div>
+    <div class="buzz ${firstTurn || ''}" role="img" aria-label="${A.buzz}: ${firstTurn || 'none'}">
+      <svg viewBox="0 0 150 80" aria-hidden="true"><g fill="none" stroke="#2F3447" stroke-width="5" stroke-linecap="round">
+        <path d="M30 40h90M75 40v30"/><rect x="14" y="32" width="22" height="16" rx="6" fill="#E0532F"/><rect x="114" y="32" width="22" height="16" rx="6" fill="#E0532F"/>
+        <g class="vl"><path d="M8 22c-6 10-6 26 0 36M18 26c-4 8-4 20 0 28" stroke="#E0532F"/></g>
+        <g class="vr"><path d="M142 22c6 10 6 26 0 36M132 26c4 8 4 20 0 28" stroke="#E0532F"/></g></g></svg>
+      <span>${esc(A.buzz)}</span></div></div>`;
+  h += `<div class="steps" aria-label="Turns">${ms.slice(0, 7).map(m => `<span>${arrowSVG(m, '#2F3447')}</span>`).join('')}</div>`;
+  if (rt.unknownIds.length) h += `<div class="note warn">${icon('fog')}<span><b>${esc(A.unsure)}</b> · 5 min</span></div>`;
+  h += `<ol class="orders" aria-label="${A.orders}">${rt.order.map((o, i) => {
+    const p = PLACE[o], movedTag = S.shock && S.shock.done && p.block === CONFIG.aftershock.block ? ' <span class="moved">↻ moved</span>' : '';
+    return `<li><span class="n">${i + 1}</span>${icon(p.icon)}<span>${esc(BY[p.block].name)}${movedTag}</span></li>`; }).join('')}</ol>`;
+  if (S.shock && S.shock.done) {
+    h += `<div class="note shock">${icon('package')}<div><b>↻ ${esc(A.resorted)}</b>
+      <div class="prev" aria-label="Before">${S.shock.prev.map((o, i) => `${i + 1}${icon(PLACE[o].icon)}`).join(' ')}</div>
+      <p><b>${esc(A.pay)}</b></p></div></div>`;
+  }
+  return h;
+}
+function lenaHTML(rt) {
+  const L = S.lang, T = CONFIG.text.lena[L], G = CONFIG.text[L];
+  if (S.phase === 'night') return `<div class="l-head">${icon('moon')}<span>${esc(G.night)}</span></div>`;
+  const steps = landmarkSteps(rt);
+  const card = (ic, txt, cls = '') => `<div class="pic ${cls}">${icon(ic)}<span>${esc(txt)}</span></div>`;
+  const cards = [card('hotel', T.start)];
+  steps.forEach(s => {
+    if (s.kind === 'bridge') cards.push(card('bridge', T.bridge));
+    else if (s.kind === 'clock') cards.push(card('clock', T.clock));
+    else if (s.kind === 'hospital') cards.push(card('hospital', T.hospital));
+    else if (s.kind === 'lot') cards.push(card('park', T.lot));
+    else if (s.kind === 'arrive') cards.push(card('temple', T.arrive, 'end'));
+    else { const b = BY[s.id]; cards.push(card(b.landmark.icon, b.landmark[L] || b.landmark.en, level(s.id) === 'unknown' ? 'unk' : '')); }
+  });
+  let h = '';
+  if (S.phase === 'eve') h += `<p>${esc(G.eve)}</p>`;
+  h += `<div class="l-head">${icon('walk')}<div>${esc(T.head)}<small>${esc(fill(T.mins, { n: (rt.path.length - 1) * 4 }))}</small></div></div>`;
+  h += warnHTML(rt, L);
+  if (rt.avoidedIds.length) h += `<div class="note avoid">${icon('fog')}<span>${esc(T.avoid)}</span></div>`;
+  h += `<div class="pics" ${L === 'hi' ? 'lang="hi"' : ''}>${cards.join('<span class="sep" aria-hidden="true">›</span>')}</div>`;
+  return h;
+}
+let lastPanel = '';
+function renderPanel(rt) {
+  const L = S.resident === 'lena' ? S.lang : 'en';
+  let body;
+  if (!rt && S.phase !== 'night') body = '';
+  else if (S.resident === 'kamala') body = kamalaHTML(rt);
+  else if (S.resident === 'arjun') body = arjunHTML(rt);
+  else body = lenaHTML(rt);
+  const html = personaHTML() + `<div ${L === 'hi' ? 'lang="hi"' : ''}>${scenarioHTML(rt, L)}</div>` + body;
+  if (html !== lastPanel) { $('#msg').innerHTML = html; lastPanel = html; }
+}
+
+/* =====================================================================
+   Render
+   ===================================================================== */
+let lastLogLen = -1;
+function render() {
+  // blocks
+  const occ = occupancy(S.belief);
+  BLOCKS.forEach(b => {
+    const el = blockEls[b.id], lv = level(b.id), L = CONFIG.levels[lv];
+    placeEl(el, S.belief[b.id]);
+    el.classList.toggle('lvl-sure', lv === 'sure'); el.classList.toggle('lvl-think', lv === 'think'); el.classList.toggle('lvl-unknown', lv === 'unknown');
+    el.classList.toggle('blink', S.blink.has(b.id));
+    el.querySelector('.g').textContent = L.glyph; el.querySelector('.l').textContent = L.label;
+    el.setAttribute('aria-label', `${b.name}: ${L.label}. ${b.places.map(p => p.label).join(', ')}.`);
+  });
+  const lot = MOVABLE.find(s => occ[s].type === 'lot');
+  if (lot != null) placeEl(lotEl, lot);
+  CONFIG.anchors.forEach(a => anchorEls[a.id].classList.toggle('pulse', !!S.pulse));
+  board.classList.toggle('offline', S.offline);
+  // highlight resident endpoints
+  const r = CONFIG.residents[S.resident], hl = new Set(S.resident === 'arjun' ? [r.start, ...r.orders] : [r.from, r.to]);
+  board.querySelectorAll('.place').forEach(p => p.classList.toggle('hl', hl.has(p.dataset.place)));
+  // route + overlay
+  const rt = currentRoute();
+  $('#over').innerHTML = overlaySVG(rt);
+  // decisions about the route
+  if (rt && S.phase === 'day' && !S.animating) {
+    const who = CONFIG.residents[S.resident].name;
+    if (rt.avoidedIds.length) addLog(fill(CONFIG.log.avoid, { who, names: listNames(rt.avoidedIds.map(id => BY[id].name)) }), `av|${S.resident}|${rt.avoidedIds.sort()}`);
+    if (rt.unknownIds.length) addLog(fill(CONFIG.log.warn, { who, names: listNames(rt.unknownIds.map(id => BY[id].name)) }), `wn|${S.resident}|${rt.unknownIds.sort()}`);
+  }
+  // banner
+  const bn = $('#banner');
+  if (S.banner) { bn.hidden = false; bn.className = 'banner ' + (S.banner.cls || ''); bn.innerHTML = S.banner.html; } else bn.hidden = true;
+  // clock
+  $('#clockTime').textContent = fmt(S.time);
+  $('#clockIcon').setAttribute('href', S.phase === 'night' ? '#i-moon' : '#i-sun');
+  $('#clockPhase').textContent = S.offline ? 'Offline · last known 6:10 AM' : S.phase === 'eve' ? 'Before the shuffle' : S.phase === 'night' ? 'Night shuffle' :
+    S.time >= CONFIG.time.aftershock - CONFIG.time.warnMinutes ? 'Daytime' : S.time < CONFIG.time.syncEnd ? 'Morning sync' : 'Morning';
+  // controls
+  const sl = $('#timeSlider');
+  sl.disabled = !(S.synced && !S.animating) || S.time > CONFIG.time.sliderMax;
+  sl.value = Math.min(Math.max(S.time, 240), CONFIG.time.sliderMax);
+  sl.setAttribute('aria-valuetext', fmt(S.time));
+  $('#sliderLabel').textContent = fmt(Math.min(Math.max(S.time, 240), CONFIG.time.sliderMax));
+  $('#btnNight').textContent = S.phase === 'eve' ? 'Start the night' : 'Replay the night';
+  $('#btnNight').disabled = S.animating;
+  $('#btnWrong').setAttribute('aria-pressed', !!S.wrong);
+  $('#btnOffline').setAttribute('aria-pressed', S.offline);
+  $('#btnShock').disabled = !!S.shock || S.animating;
+  $('#btnWrong').disabled = $('#btnOffline').disabled = S.animating;
+  $('#seedLabel').textContent = 'Seed ' + S.seed;
+  document.querySelectorAll('.res').forEach(b => b.setAttribute('aria-pressed', b.dataset.res === S.resident));
+  renderPanel(rt);
+  // log
+  if (S.log.length !== lastLogLen) {
+    lastLogLen = S.log.length;
+    $('#logList').innerHTML = S.log.length ? S.log.slice().reverse().map(e => `<li><time>${fmt(e.t)}</time><span>${esc(e.text)}</span></li>`).join('')
+      : '<li><span class="empty">Nothing yet. Start the night to see the AI explain its choices.</span></li>';
+  }
+}
+
+/* =====================================================================
+   Actions (each works animated, or instantly for Story "Back")
+   ===================================================================== */
+function resetWorld(seed = S.seed) {
+  S = freshState(seed);
+  stopSpeech(); clearMotion();
+  document.body.classList.remove('night'); $('#sky').classList.remove('morning');
+  lastLogLen = -1; render();
+}
+function applyShuffle() { S.belief = { ...S.shuffled }; S.real = { ...S.shuffled }; }
+
+async function actNight({ instant } = {}) {
+  if (S.phase !== 'eve') resetWorld();
+  const ep = S.epoch;
+  if (instant || RM) {
+    applyShuffle(); S.phase = 'day'; S.time = CONFIG.time.nightEnd;
+    addLog(CONFIG.log.start, 'start', CONFIG.time.nightStart); addLog(CONFIG.log.allUnknown, 'allu', CONFIG.time.nightEnd);
+    render(); return;
+  }
+  S.animating = true; S.phase = 'night'; S.time = CONFIG.time.nightStart;
+  addLog(CONFIG.log.start, 'start'); document.body.classList.add('night'); render();
+  const tp = animateTime(CONFIG.time.nightStart, CONFIG.time.nightEnd, 5600);
+  await wait(1100); if (S.epoch !== ep) return;
+  await flipMove(applyShuffle, { dur: 2600, stagger: 80 }); if (S.epoch !== ep) return;
+  await tp; if (S.epoch !== ep) return;
+  document.body.classList.remove('night'); $('#sky').classList.add('morning');
+  S.phase = 'day'; S.time = CONFIG.time.nightEnd; addLog(CONFIG.log.allUnknown, 'allu'); S.animating = false; render();
+}
+async function actSync({ instant } = {}) {
+  if (S.phase !== 'day') await actNight({ instant: true });
+  const ep = S.epoch;
+  if (instant || RM) { setTime(Math.max(S.time, CONFIG.time.syncEnd)); S.synced = true; $('#sky').classList.remove('morning'); render(); return; }
+  S.animating = true; $('#sky').classList.add('morning'); render();
+  await animateTime(S.time, CONFIG.time.syncEnd, 9000); if (S.epoch !== ep) return;
+  $('#sky').classList.remove('morning'); S.animating = false; S.synced = true; render();
+}
+async function actAnchors({ instant } = {}) {
+  if (instant || RM) return;
+  const ep = S.epoch; S.pulse = true; render(); await wait(3200); if (S.epoch !== ep) return; S.pulse = false; render();
+}
+function ensureDay() {
+  if (S.phase !== 'day' || !S.synced) { if (S.phase !== 'day') actNight({ instant: true }); setTime(Math.max(S.time, CONFIG.time.syncEnd)); S.synced = true; S.animating = false; document.body.classList.remove('night'); $('#sky').classList.remove('morning'); }
+}
+async function actKamala() { ensureDay(); S.resident = 'kamala'; setTime(Math.max(S.time, 420)); }
+
+async function actWrong({ instant } = {}) {
+  ensureDay();
+  if (S.wrong) return;
+  const who = S.resident, rt = currentRoute(), ends = endpointBlocks(who);
+  const cands = rt.path.slice(1, -1).map(s => ({ s, o: rt.occ[s] })).filter(x => x.o.type === 'block' && !ends.includes(x.o.id) && level(x.o.id) !== 'unknown');
+  if (!cands.length) { addLog(fill(CONFIG.log.noWrong, { who: CONFIG.residents[who].name })); render(); return; }
+  const pick = cands.find(x => x.o.id === CONFIG.wrong.prefer) || cands[Math.floor((cands.length - 1) / 2)];
+  const onRoute = new Set(rt.path.map(s => rt.occ[s]).filter(o => o.type === 'block').map(o => o.id));
+  const others = BLOCKS.map(b => b.id).filter(id => id !== pick.o.id && !onRoute.has(id) && !ends.includes(id));
+  const P = others[others.length - 1] || BLOCKS.map(b => b.id).find(id => id !== pick.o.id && !ends.includes(id));
+  const W = pick.o.id, wS = S.real[W], pS = S.real[P];
+  S.real[W] = pS; S.real[P] = wS;           // reality differs; the AI's belief stays the same
+  S.overrides[W] = 'sure';                  // the AI stays confident (that's the problem)
+  S.wrong = { id: W, other: P, believed: wS, realSlot: pS, reached: false, corrected: false, reveal: false };
+  const ep = S.epoch, idx = rt.path.indexOf(wS), pts = rt.path.slice(0, idx + 1).map(center);
+  if (instant || RM || pts.length < 2) { S.wrong.reached = true; S.walker = pts[pts.length - 1]; render(); return; }
+  S.animating = true; render();
+  for (let i = 1; i < pts.length; i++) {
+    const a = pts[i - 1], b = pts[i], t0 = performance.now(), d = 900;
+    await new Promise(res => { const f = now => { if (S.epoch !== ep) return res(); const k = Math.min(1, (now - t0) / d); S.walker = { x: a.x + (b.x - a.x) * k, y: a.y + (b.y - a.y) * k }; render(); k < 1 ? requestAnimationFrame(f) : res(); }; requestAnimationFrame(f); });
+    if (S.epoch !== ep) return;
+  }
+  S.wrong.reached = true; S.animating = false; render();
+}
+async function actReport({ instant } = {}) {
+  if (!S.wrong) await actWrong({ instant: true });
+  const w = S.wrong; if (!w || w.corrected) return;
+  const who = CONFIG.residents[S.resident].name, bn = BY[w.id].name;
+  addLog(fill(CONFIG.log.report, { who, block: bn }));
+  await flipMove(() => {
+    S.belief[w.id] = S.real[w.id]; S.belief[w.other] = S.real[w.other];
+    S.overrides[w.id] = 'unknown'; S.overrides[w.other] = 'think';
+    w.corrected = true; w.reached = true; S.walker = null;
+    addLog(fill(CONFIG.log.fix, { block: bn, lag: CONFIG.wrong.lagMinutes, other: BY[w.other].name }));
+    addLog(fill(CONFIG.log.share, { n: CONFIG.wrong.peopleHelped }));
+  }, { dur: 1400, stagger: 0, instant });
+  render();
+}
+function wrongOff() {
+  const w = S.wrong; if (!w) return;
+  flipMove(() => {
+    S.real[w.id] = w.believed; S.real[w.other] = w.realSlot; S.belief[w.id] = w.believed; S.belief[w.other] = w.realSlot;
+    delete S.overrides[w.id]; delete S.overrides[w.other]; S.wrong = null; S.walker = null;
+  }, { dur: 900, stagger: 0 });
+}
+async function actOffline() {
+  ensureDay();
+  if (S.time < CONFIG.time.lastKnown + 5) setTime(420);
+  S.offline = true; S.notice = null;
+  addLog(fill(CONFIG.log.offline, { t: CONFIG.offline.lastKnownLabel })); addLog(CONFIG.log.mesh);
+  render();
+}
+async function actOnline({ instant } = {}) {
+  if (!S.offline) await actOffline();
+  const before = Object.fromEntries(BLOCKS.map(b => [b.id, level(b.id)]));
+  S.offline = false;
+  CONFIG.offline.changes.forEach(c => { S.overrides[c.block] = c.to; });
+  const changed = BLOCKS.filter(b => level(b.id) !== before[b.id]).map(b => b.id);
+  changed.forEach(id => CONFIG.offline.changes.some(c => c.block === id) && addLog(fill(CONFIG.log.offChange, { block: BY[id].name })));
+  addLog(fill(CONFIG.log.online, { n: changed.length }));
+  S.notice = { n: changed.length };
+  if (!instant && !RM) { S.blink = new Set(changed); render(); const ep = S.epoch; await wait(1400); if (S.epoch !== ep) return; S.blink = new Set(); }
+  render();
+}
+async function actShock() {
+  ensureDay();
+  if (S.shock) return;
+  S.offline = false; S.notice = null; S.wrong = null; S.walker = null;   // clear earlier what-ifs so Arjun's view is clean
+  const id = CONFIG.aftershock.block, name = BY[id].name, ep = S.epoch;
+  S.resident = 'arjun';
+  const prev = planFor('arjun', S.belief, aiCost).order;
+  S.shock = { prev, done: false }; S.animating = true;
+  setTime(CONFIG.time.aftershock - CONFIG.time.warnMinutes);
+  addLog(fill(CONFIG.log.shockWarn, { block: name }));
+  const total = CONFIG.time.warnMinutes * 60, ms = RM ? 0 : 5000, t0 = performance.now();
+  await new Promise(res => {
+    const f = now => {
+      if (S.epoch !== ep) return res();
+      const k = ms ? Math.min(1, (now - t0) / ms) : 1, left = Math.ceil(total * (1 - k));
+      S.banner = { cls: 'warn', html: `⚠ Aftershock warning · ${esc(name)} moves in <span class="cd">${Math.floor(left / 60)}:${String(left % 60).padStart(2, '0')}</span>` };
+      S.time = CONFIG.time.aftershock - CONFIG.time.warnMinutes + Math.floor(CONFIG.time.warnMinutes * k);
+      render(); k < 1 ? requestAnimationFrame(f) : res();
+    };
+    requestAnimationFrame(f);
+  });
+  if (S.epoch !== ep) return;
+  S.banner = null;
+  const occ = occupancy(S.belief), lot = MOVABLE.find(s => occ[s].type === 'lot');
+  await flipMove(() => { S.belief[id] = lot; S.real[id] = lot; S.overrides[id] = 'think'; S.time = CONFIG.time.aftershock; }, { dur: 2200, stagger: 0 });
+  if (S.epoch !== ep) return;
+  addLog(fill(CONFIG.log.shock, { block: name }));
+  S.shock.done = true; addLog(CONFIG.log.resort); render();
+  await wait(RM ? 0 : 2500); if (S.epoch !== ep) return;
+  delete S.overrides[id]; S.time = CONFIG.time.aftershock + 1; addLog(fill(CONFIG.log.shockSure, { block: name }));
+  S.animating = false; render();
+}
+
+const ACTIONS = {
+  reset: () => resetWorld(), night: actNight, anchors: actAnchors, sync: actSync, kamala: actKamala,
+  wrong: actWrong, report: actReport, offline: actOffline, online: actOnline, aftershock: actShock, end: () => {},
+};
+
+/* =====================================================================
+   Speech (Kamala's "Read aloud")
+   ===================================================================== */
+function stopSpeech() { try { if ('speechSynthesis' in window) speechSynthesis.cancel(); } catch (e) {} if (S) S.speaking = false; }
+function readAloud() {
+  if (!('speechSynthesis' in window)) return;
+  if (S.speaking) { stopSpeech(); render(); return; }
+  const rt = currentRoute(); if (!rt) return;
+  const kt = kamalaText(rt, S.phase === 'eve'), T = CONFIG.text.en;
+  let text = kt.head + ' ';
+  if (S.wrong && S.wrong.corrected) text += fill(T.sorry, { block: BY[S.wrong.id].name, lag: CONFIG.wrong.lagMinutes }) + ' ';
+  if (rt.unknownIds.length) text += T.warn + ' ';
+  text += kt.steps.join(' ');
+  const u = new SpeechSynthesisUtterance(text); u.rate = 0.88; u.lang = 'en-IN';
+  u.onend = u.onerror = () => { S.speaking = false; render(); };
+  speechSynthesis.cancel(); speechSynthesis.speak(u); S.speaking = true; render();
+}
+
+/* =====================================================================
+   Story mode
+   ===================================================================== */
+const story = { i: -1, playing: false, timer: null, until: 0, remaining: 0 };
+async function storyGo(i) {
+  const steps = CONFIG.story;
+  i = Math.max(0, Math.min(steps.length - 1, i));
+  clearTimeout(story.timer); story.i = i;
+  resetWorld(); S.resident = 'kamala';
+  for (let j = 0; j < i; j++) await ACTIONS[steps[j].do]({ instant: true });
+  S.pulse = false; render();
+  $('#caption').textContent = steps[i].caption;
+  $('#stCount').textContent = `${i + 1} / ${steps.length}`;
+  ACTIONS[steps[i].do]({ instant: false });
+  if (story.playing) schedule(steps[i].ms);
+}
+function schedule(ms) { clearTimeout(story.timer); story.remaining = ms; story.until = performance.now() + ms; story.timer = setTimeout(() => { if (story.i < CONFIG.story.length - 1) storyGo(story.i + 1); else { story.playing = false; syncStoryBtn(); } }, ms); }
+function syncStoryBtn() { $('#stPlay').textContent = story.playing ? 'Pause' : 'Play'; }
+function storyOpen() { $('#storybar').hidden = false; document.body.classList.add('story-on'); story.playing = true; syncStoryBtn(); storyGo(0); }
+function storyClose() { clearTimeout(story.timer); story.playing = false; story.i = -1; $('#storybar').hidden = true; document.body.classList.remove('story-on'); }
+function storyPause() {
+  if (story.i < 0) return;
+  if (story.playing) { story.playing = false; clearTimeout(story.timer); story.remaining = Math.max(0, story.until - performance.now()); }
+  else { story.playing = true; schedule(story.remaining || 1500); }
+  syncStoryBtn();
+}
+
+/* =====================================================================
+   Wiring
+   ===================================================================== */
+function manual() { if (story.playing) storyPause(); }
+buildBoard();
+S = freshState(CONFIG.seed);
+render();
+
+$('#btnNight').onclick = async () => { manual(); resetWorld(); await actNight(); await actSync(); };
+$('#btnReset').onclick = () => { manual(); resetWorld(); };
+$('#btnSeed').onclick = () => { manual(); resetWorld(1 + Math.floor(Math.random() * 9999)); };
+$('#timeSlider').oninput = e => { manual(); setTime(+e.target.value); };
+$('#btnWrong').onclick = () => { manual(); S.wrong ? wrongOff() : actWrong(); };
+$('#btnOffline').onclick = () => { manual(); S.offline ? actOnline() : actOffline(); };
+$('#btnShock').onclick = () => { manual(); actShock(); };
+$('#btnStory').onclick = storyOpen;
+$('#stBack').onclick = () => storyGo(story.i - 1);
+$('#stNext').onclick = () => storyGo(story.i + 1);
+$('#stPlay').onclick = storyPause;
+$('#stClose').onclick = storyClose;
+$('#residents').onclick = e => { const b = e.target.closest('[data-res]'); if (!b) return; stopSpeech(); S.resident = b.dataset.res; render(); };
+$('#msg').onclick = e => {
+  const b = e.target.closest('[data-act]'); if (!b) return;
+  const a = b.dataset.act;
+  if (a === 'report') { manual(); actReport(); }
+  else if (a === 'reveal') { S.wrong.reveal = !S.wrong.reveal; render(); }
+  else if (a === 'read') readAloud();
+  else if (a === 'lang-en' || a === 'lang-hi') { S.lang = a.slice(5); render(); }
+};
+</script>
+</body>
+</html>
