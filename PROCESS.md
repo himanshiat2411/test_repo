@@ -69,3 +69,27 @@ How it works, in simple terms:
 
 - **Our team**: the world and its rules, the residents, the scenarios, the visual direction, the reference image and the brief. We review and approve the work.
 - **AI assistant**: the plan, the code, the icons, the testing in a headless browser, fixing the problems it found, and these docs.
+
+## 6. Concept video: the floating buddy
+
+We then added a new idea: every person has a small floating buddy that moves with them, helps with directions, and is linked to the central city AI. We asked the AI assistant to make a video of it. The video zooms into the city and also shows the night shuffle.
+
+- `video/city-shuffle-buddy.mp4`: the 76-second video (1920×1080).
+- `video/buddy-video.html`: the animation it was made from. Open it in a browser to watch it live. To change it, edit `CAPTIONS` and the scene times at the top of the file.
+
+**How it was made**: the whole film is drawn by code. The AI rendered it frame by frame (30 frames per second) in a headless browser and joined the frames into an MP4 with ffmpeg. This gives smooth motion and the same result every time.
+
+**Story of the video**:
+1. Wide view of the city on its island.
+2. Zoom in.
+3. The night shuffle (2–4 AM). Anchors stay still.
+4. The sync wave (fog → stripes → solid).
+5. Lumi the lantern buddy appears, linked to the City AI.
+6. Lumi guides Kamala. It goes foggy at a street it doesn't know and finds a way around.
+7. Lumi's four shapes: sure, think so, don't know, sorry.
+8. Three buddy forms: lantern (Kamala), bird (Arjun), cloud (Lena).
+9. Phone → AR glasses → a physical buddy you build yourself.
+
+**Decisions**:
+- We hadn't picked a shape yet, so the AI chose the lantern as the main buddy because it matches the paper style and its glow can show how sure it is.
+- There is no music or voice-over, so the team can add their own.
