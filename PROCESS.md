@@ -93,3 +93,22 @@ We then added a new idea: every person has a small floating buddy that moves wit
 **Decisions**:
 - We hadn't picked a shape yet, so the AI chose the lantern as the main buddy because it matches the paper style and its glow can show how sure it is.
 - There is no music or voice-over, so the team can add their own.
+
+### 6b. The 3D version
+
+After seeing the first video, we asked for it to be **3D**. The AI rebuilt it with Three.js, a free 3D graphics library:
+
+- The city sits on a floating 3D island with clouds and trees, like our reference image.
+- Buildings are 3D, and anchors have red map pins.
+- At night, blocks **lift into the air and fly** to their new places.
+- Unknown blocks are wrapped in 3D fog.
+- Lumi is a glowing 3D lantern with its own light.
+- The camera moves: a wide orbit, a zoom into the city, then it follows Kamala.
+- The final scenes are set in a small 3D studio with pedestals.
+
+Files:
+- `video/city-shuffle-buddy-3d.mp4`: the 3D video.
+- `video/buddy-video-3d.html`: the 3D scene it was made from. Open it in a browser to watch it live.
+- `video/three.min.js`: the Three.js library, so the scene also works offline.
+
+The same story and captions as the first video were kept.
