@@ -47,6 +47,26 @@
     .bg__cream { background: linear-gradient(to bottom, rgba(251,247,242,0) 0%, var(--cream) 23%); }
     .bg__gold  { background: linear-gradient(to bottom, rgba(255,243,214,0) 0%, var(--gold-bg) 23%); }
 
+    /* soft light beams + vignette (like light falling through a window) */
+    .vignette {
+      position: absolute; inset: 0; opacity: 0;
+      background: radial-gradient(ellipse 75% 70% at 58% 42%, rgba(0,0,0,0) 40%, rgba(70, 48, 40, .22) 100%);
+    }
+    .rays {
+      position: absolute; inset: -25%; opacity: 0;
+      background:
+        linear-gradient(118deg, transparent 18%, rgba(255,250,240,.75) 22%, transparent 27%),
+        linear-gradient(118deg, transparent 31%, rgba(255,248,236,.55) 35%, transparent 41%),
+        linear-gradient(118deg, transparent 47%, rgba(255,246,230,.45) 52%, transparent 58%),
+        linear-gradient(118deg, transparent 62%, rgba(255,250,240,.35) 64%, transparent 69%);
+      filter: blur(22px);
+      mix-blend-mode: screen;
+    }
+    .rays::after {
+      content: ""; position: absolute; inset: 0;
+      background: linear-gradient(118deg, rgba(120, 90, 70, .10) 0%, transparent 30%, transparent 70%, rgba(120, 90, 70, .10) 100%);
+    }
+
     /* paper grain for a hand-made feel */
     .grain {
       position: fixed; inset: 0; z-index: 50; pointer-events: none; opacity: .07;
@@ -160,6 +180,8 @@
     }
     .static .ending { background: none; }
     .static .bg__layer { top: -30%; }
+    .static .rays, .static .vignette { opacity: 1; }
+    .static #bud { display: none; }
     .card {
       max-width: 620px; width: 100%;
       background: rgba(255, 253, 250, .78);
@@ -212,6 +234,8 @@
     <div class="bg__layer bg__green"></div>
     <div class="bg__layer bg__cream"></div>
     <div class="bg__layer bg__gold"></div>
+    <div class="vignette"></div>
+    <div class="rays"></div>
   </div>
   <div class="grain" aria-hidden="true"></div>
   <canvas class="pollen" aria-hidden="true"></canvas>
@@ -298,9 +322,72 @@
               <stop offset="1" stop-color="#FCE6B5" stop-opacity="0" />
             </radialGradient>
             <radialGradient id="haloGrad">
-              <stop offset="0" stop-color="#FFFFFF" stop-opacity=".7" />
+              <stop offset="0" stop-color="#FFFFFF" stop-opacity=".85" />
+              <stop offset=".45" stop-color="#FFF6F2" stop-opacity=".45" />
               <stop offset="1" stop-color="#FFFFFF" stop-opacity="0" />
             </radialGradient>
+
+            <!-- realistic tepal: light rim, rose body, deeper centre -->
+            <linearGradient id="tepalGrad" x1="0" y1="0" x2="1" y2="0">
+              <stop offset="0"   stop-color="#FBE3EA" />
+              <stop offset=".18" stop-color="#F2B3C3" />
+              <stop offset=".42" stop-color="#E3869F" />
+              <stop offset=".5"  stop-color="#DA7593" />
+              <stop offset=".58" stop-color="#E3869F" />
+              <stop offset=".82" stop-color="#F2B3C3" />
+              <stop offset="1"   stop-color="#FBE3EA" />
+            </linearGradient>
+            <!-- pale green-white throat at the base of each tepal -->
+            <linearGradient id="throatGrad" x1="0" y1="1" x2="0" y2="0">
+              <stop offset="0"   stop-color="#E9EFCF" stop-opacity=".95" />
+              <stop offset=".14" stop-color="#F6EAE4" stop-opacity=".6" />
+              <stop offset=".34" stop-color="#F6EAE4" stop-opacity="0" />
+            </linearGradient>
+            <!-- light shining through the tip -->
+            <linearGradient id="tipLight" x1="0" y1="1" x2="0" y2="0">
+              <stop offset=".6" stop-color="#FFFFFF" stop-opacity="0" />
+              <stop offset="1"  stop-color="#FFF5F7" stop-opacity=".55" />
+            </linearGradient>
+            <radialGradient id="throatCenter">
+              <stop offset="0"  stop-color="#E6EDC6" />
+              <stop offset=".5" stop-color="#EDE9CF" stop-opacity=".8" />
+              <stop offset="1"  stop-color="#F3DDE0" stop-opacity="0" />
+            </radialGradient>
+            <linearGradient id="budBody" x1="0" y1="0" x2="1" y2="0">
+              <stop offset="0"   stop-color="#B9496C" />
+              <stop offset=".3"  stop-color="#E79BB0" />
+              <stop offset=".45" stop-color="#F6CBD6" />
+              <stop offset=".7"  stop-color="#D9718F" />
+              <stop offset="1"   stop-color="#A83E60" />
+            </linearGradient>
+            <linearGradient id="budBase" x1="0" y1="1" x2="0" y2="0">
+              <stop offset="0"   stop-color="#8FAE73" />
+              <stop offset=".22" stop-color="#A9BE85" stop-opacity=".75" />
+              <stop offset=".45" stop-color="#C9B59A" stop-opacity="0" />
+            </linearGradient>
+            <linearGradient id="leafDark" x1="0" y1="1" x2="0" y2="0">
+              <stop offset="0" stop-color="#3F5A30" />
+              <stop offset="1" stop-color="#6D8D53" />
+            </linearGradient>
+            <linearGradient id="leafLight" x1="0" y1="1" x2="0" y2="0">
+              <stop offset="0" stop-color="#6E8E55" />
+              <stop offset="1" stop-color="#A9C48D" />
+            </linearGradient>
+            <linearGradient id="antherGrad" x1="0" y1="0" x2="0" y2="1">
+              <stop offset="0"  stop-color="#D98A3E" />
+              <stop offset=".5" stop-color="#A9502C" />
+              <stop offset="1"  stop-color="#6E2A1C" />
+            </linearGradient>
+
+            <filter id="pshadow" x="-30%" y="-20%" width="160%" height="140%">
+              <feDropShadow dx="0" dy="1.5" stdDeviation="2.4" flood-color="#6B2236" flood-opacity=".26" />
+            </filter>
+            <filter id="soft" x="-50%" y="-10%" width="200%" height="120%">
+              <feGaussianBlur stdDeviation="2.4" />
+            </filter>
+            <filter id="rimGlow" x="-20%" y="-20%" width="140%" height="140%">
+              <feGaussianBlur stdDeviation="1.6" />
+            </filter>
           </defs>
 
           <!-- soil (does not sway) -->
@@ -347,40 +434,15 @@
             <path id="stemHi" fill="none" stroke="#C7D9B5" stroke-width="1" stroke-linecap="round" opacity=".55"
               d="M201.5,556 C203.5,478 198.5,362 202.5,264 C204,236 202,216 201.2,200" />
 
-            <!-- leaves -->
-            <g id="leafL">
-              <path fill="url(#leafGrad)" stroke="#4E6A3E" stroke-width=".8"
-                d="M199,452 C176,441 141,421 118,389 C108,375 100,361 93,348 C108,357 125,369 141,385 C161,405 182,428 201,446 Z" />
-              <path fill="none" stroke="#3F5832" stroke-width=".8" stroke-linecap="round" opacity=".7"
-                d="M199,449 C170,430 130,396 95,351" />
-              <path fill="none" stroke="#C7D9B5" stroke-width=".6" opacity=".45"
-                d="M196,445 C168,425 135,395 112,372" />
-            </g>
-            <g id="leafR">
-              <path fill="url(#leafGrad)" stroke="#4E6A3E" stroke-width=".8"
-                d="M201,404 C224,394 258,376 280,348 C290,336 298,322 305,311 C291,318 275,330 259,344 C239,362 218,384 199,398 Z" />
-              <path fill="none" stroke="#3F5832" stroke-width=".8" stroke-linecap="round" opacity=".7"
-                d="M201,401 C230,384 270,350 303,314" />
-              <path fill="none" stroke="#C7D9B5" stroke-width=".6" opacity=".45"
-                d="M204,396 C232,378 262,352 285,328" />
-            </g>
+            <!-- leaves, bud, petals, words and stamens are drawn by JS -->
+            <g id="leaves"></g>
 
             <!-- soft light behind the flower -->
-            <circle id="halo" cx="200" cy="195" r="175" fill="url(#haloGrad)" />
+            <circle id="halo" cx="200" cy="195" r="190" fill="url(#haloGrad)" />
 
-            <!-- closed bud -->
-            <g id="bud">
-              <path fill="url(#budGrad)" stroke="#C99AA0" stroke-width=".8"
-                d="M200,200 C186,190 182,160 188,128 C192,110 197,100 200,93 C203,100 208,110 212,128 C218,160 214,190 200,200 Z" />
-              <g fill="none" stroke="#B9838C" stroke-width=".7" stroke-linecap="round" opacity=".55">
-                <path d="M200,197 C197,170 197,130 200,97" />
-                <path d="M193,190 C188,160 190,128 197,104" />
-                <path d="M207,190 C212,160 210,128 203,104" />
-              </g>
-            </g>
-
-            <!-- petals, words and stamens are drawn by JS -->
+            <g id="bud"></g>
             <g id="petals"></g>
+            <circle id="throat" cx="200" cy="195" r="24" fill="url(#throatCenter)" />
             <g id="words"></g>
             <circle id="centerGlow" cx="200" cy="195" r="46" fill="url(#glowGrad)" />
             <g id="stamens"></g>
@@ -446,87 +508,220 @@
     }
     function f(n) { return Math.round(n * 10) / 10; }
 
-    /* ---------- Build the petals ---------- */
-    // final angle (0 = straight up), opening order, word
-    var PETALS = [
-      { angle: -150, order: 5, word: "Growing" },
-      { angle:  150, order: 4, word: "Brave" },
-      { angle:  -90, order: 3, word: "Honest" },
-      { angle:   90, order: 2, word: "Creative" },
-      { angle:  -30, order: 1, word: "Calm" },
-      { angle:   30, order: 0, word: "Curious" }
-    ];
-
-    function petalPath(L, W, c, j) {
-      // j = jitter for the sketchy second outline
-      function J() { return j ? rnd(-j, j) : 0; }
-      var x = CX, y = CY;
-      return "M" + x + "," + y +
-        " C" + f(x - W * .22 + J()) + "," + f(y - L * .12 + J()) + " " + f(x - W * .6 + J()) + "," + f(y - L * .3 + J()) + " " + f(x - W * .52 + J()) + "," + f(y - L * .56 + J()) +
-        " C" + f(x - W * .44 + J()) + "," + f(y - L * .78 + J()) + " " + f(x - W * .14 + c * .5 + J()) + "," + f(y - L * .94 + J()) + " " + f(x + c) + "," + f(y - L) +
-        " C" + f(x + c + 7) + "," + f(y - L - 3) + " " + f(x + c + 10) + "," + f(y - L + 5) + " " + f(x + c + 5) + "," + f(y - L + 10) +
-        " C" + f(x + W * .18 + c * .5 + J()) + "," + f(y - L * .88 + J()) + " " + f(x + W * .44 + J()) + "," + f(y - L * .76 + J()) + " " + f(x + W * .52 + J()) + "," + f(y - L * .55 + J()) +
-        " C" + f(x + W * .6 + J()) + "," + f(y - L * .3 + J()) + " " + f(x + W * .22 + J()) + "," + f(y - L * .12 + J()) + " " + x + "," + y + "Z";
+    /* ---------- Shape helpers ---------- */
+    // smooth curve through points (Catmull-Rom → Bézier)
+    function smoothPath(pts, close) {
+      var d = "M" + f(pts[0][0]) + "," + f(pts[0][1]);
+      for (var i = 0; i < pts.length - 1; i++) {
+        var p0 = pts[i - 1] || pts[i], p1 = pts[i], p2 = pts[i + 1], p3 = pts[i + 2] || p2;
+        d += " C" + f(p1[0] + (p2[0] - p0[0]) / 6) + "," + f(p1[1] + (p2[1] - p0[1]) / 6) +
+             " " + f(p2[0] - (p3[0] - p1[0]) / 6) + "," + f(p2[1] - (p3[1] - p1[1]) / 6) +
+             " " + f(p2[0]) + "," + f(p2[1]);
+      }
+      return d + (close ? "Z" : "");
     }
+    function clamp01(x) { return x < 0 ? 0 : x > 1 ? 1 : x; }
+
+    // A blade that points "up" from (bx,by), bending sideways.
+    // widthFn(t) gives the half-width at t (0 = base, 1 = tip).
+    function blade(bx, by, L, bend, widthFn, N) {
+      N = N || 36;
+      var axis = [], left = [], right = [];
+      for (var i = 0; i <= N; i++) {
+        var t = i / N;
+        var ax = bx + bend * L * t * t, ay = by - L * t;
+        var tx = 2 * bend * L * t, ty = -L, len = Math.sqrt(tx * tx + ty * ty);
+        var nx = -ty / len, ny = tx / len;          // right-hand normal
+        var w = widthFn(t);
+        axis.push([ax, ay, nx, ny, w[0], w[1]]);
+        left.push([ax - nx * w[0], ay - ny * w[0]]);
+        right.push([ax + nx * w[1], ay + ny * w[1]]);
+      }
+      return { axis: axis, left: left, right: right };
+    }
+    // a line that follows the blade at a fraction of its width (-1 = left edge, 1 = right edge)
+    function bladeLine(b, frac, t0, t1) {
+      var pts = [], N = b.axis.length - 1;
+      for (var i = Math.round(t0 * N); i <= Math.round(t1 * N); i++) {
+        var a = b.axis[i], w = frac < 0 ? a[4] : a[5];
+        pts.push([a[0] + a[2] * w * frac, a[1] + a[3] * w * frac]);
+      }
+      return smoothPath(pts, false);
+    }
+    function outline(b) {
+      return smoothPath(b.left.concat(b.right.slice().reverse().slice(1)), true);
+    }
+
+    /* ---------- Build the tepals (petals) ---------- */
+    // final angle (0 = straight up), opening order, word, inner/outer tepal
+    var PETALS = [
+      { angle: -150, order: 5, word: "Growing",  inner: false },
+      { angle:  150, order: 4, word: "Brave",    inner: true  },
+      { angle:  -90, order: 3, word: "Honest",   inner: true  },
+      { angle:   90, order: 2, word: "Creative", inner: false },
+      { angle:  -30, order: 1, word: "Calm",     inner: false },
+      { angle:   30, order: 0, word: "Curious",  inner: true  }
+    ];
 
     var petalGroup = document.getElementById("petals");
     var wordGroup = document.getElementById("words");
     var petalEls = [], wordEls = [];
 
     PETALS.forEach(function (p) {
-      var L = 150 + rnd(-8, 8), W = 60 + rnd(-6, 6), c = rnd(-6, 6);
-      var g = el("g", { "class": "petal", transform: "rotate(" + p.angle + " " + CX + " " + CY + ")" }, petalGroup);
+      var L = (p.inner ? 152 : 158) + rnd(-6, 6);
+      var W = (p.inner ? 94 : 78) + rnd(-4, 4);
+      var bend = rnd(-.07, .07);
+      var ruf = p.inner ? .085 : .05;              // inner tepals are more ruffled
+      var phL = rnd(0, 6.28), phR = rnd(0, 6.28), frL = rnd(3, 4.2), frR = rnd(3, 4.2);
 
-      el("path", { d: petalPath(L, W, c, 0), fill: "url(#petalGrad)", stroke: "#EBC3C6", "stroke-width": ".8", "stroke-linejoin": "round" }, g);
-      // second, slightly wobbly outline = hand-drawn feel
-      el("path", { d: petalPath(L, W, c, 1.6), fill: "none", stroke: "#D99AA4", "stroke-width": ".55", opacity: ".45" }, g);
-      // veins
-      el("path", { d: "M" + CX + "," + (CY - 4) + " Q" + f(CX + c * .3) + "," + f(CY - L * .5) + " " + f(CX + c * .85) + "," + f(CY - L * .9),
-        fill: "none", stroke: "#E2A3AC", "stroke-width": ".9", "stroke-linecap": "round", opacity: ".7" }, g);
-      [-1, 1].forEach(function (s) {
-        el("path", { d: "M" + (CX + s * 3) + "," + (CY - 8) + " Q" + f(CX + s * W * .28) + "," + f(CY - L * .45) + " " + f(CX + s * W * .2 + c * .4) + "," + f(CY - L * .8),
-          fill: "none", stroke: "#E6B0B6", "stroke-width": ".6", "stroke-linecap": "round", opacity: ".4" }, g);
-      });
-      // freckles near the base
-      var n = Math.round(rnd(10, 15));
-      for (var i = 0; i < n; i++) {
-        var t = rnd(.12, .46);
-        el("circle", { cx: f(CX + rnd(-1, 1) * W * .26 * (t / .46 + .3)), cy: f(CY - L * t), r: f(rnd(.6, 1.5)),
-          fill: "#B5566A", opacity: f(rnd(.3, .7)) }, g);
+      function profile(t, ph, fr) {
+        var base = .16 * (1 - t) + .84 * Math.pow(Math.sin(Math.PI * Math.pow(t, .68)), .8);
+        var wave = 1 + ruf * Math.sin(6.283 * fr * t + ph) * clamp01((t - .18) / .35) +
+                   .025 * Math.sin(6.283 * 9 * t + ph * 2);
+        return W / 2 * base * wave;
       }
+      var b = blade(CX, CY, L, bend, function (t) { return [profile(t, phL, frL), profile(t, phR, frR)]; }, 44);
+      var shape = outline(b);
+
+      var g = el("g", { "class": "petal", transform: "rotate(" + p.angle + " " + CX + " " + CY + ")" }, petalGroup);
+      var body = el("g", { filter: "url(#pshadow)" }, g);
+
+      el("path", { d: shape, fill: "url(#tepalGrad)", "fill-opacity": ".95" }, body);
+      // deeper rose stripe down the middle (soft)
+      var stripe = blade(CX, CY, L * .86, bend * 1.1, function (t) {
+        var w = (p.inner ? 12 : 9) * Math.pow(Math.sin(Math.PI * Math.pow(t, .6)), .9);
+        return [w, w];
+      }, 24);
+      el("path", { d: outline(stripe), fill: "#BF4469", opacity: ".42", filter: "url(#soft)" }, body);
+      el("path", { d: shape, fill: "url(#throatGrad)" }, body);
+      el("path", { d: shape, fill: "url(#tipLight)" }, body);
+
+      // fine veins
+      var veins = el("g", { fill: "none", stroke: "#CF6A88", "stroke-width": ".5", "stroke-linecap": "round", opacity: ".3" }, body);
+      [-.72, -.45, -.22, .22, .45, .72].forEach(function (fr) {
+        el("path", { d: bladeLine(b, fr, .03, .86) }, veins);
+      });
+      // groove highlight along the middle
+      el("path", { d: bladeLine(b, 0, .05, .8), fill: "none", stroke: "#FBDDE5", "stroke-width": ".9", "stroke-linecap": "round", opacity: ".7" }, body);
+
+      // crimson freckles, thick near the base and centre
+      var dots = el("g", null, body);
+      var n = Math.round(rnd(48, 66));
+      for (var i = 0; i < n; i++) {
+        var t = .07 + .5 * Math.pow(rnd(0, 1), 1.5);
+        var ai = b.axis[Math.round(t * 44)];
+        var s = rnd(-1, 1), lat = s * Math.abs(s) * .72;
+        var w = lat < 0 ? ai[4] : ai[5];
+        var x = ai[0] + ai[2] * w * lat, y = ai[1] + ai[3] * w * lat;
+        var rr = rnd(.5, t < .2 ? 1.9 : 1.4);
+        el("ellipse", { cx: f(x), cy: f(y), rx: f(rr * .75), ry: f(rr * 1.25),
+          fill: rnd(0, 1) > .4 ? "#8E1D45" : "#A82D58", opacity: f(rnd(.45, .9)) }, dots);
+      }
+      // tiny raised bumps (papillae) near the throat
+      for (var k = 0; k < 9; k++) {
+        var tt = rnd(.06, .18), aj = b.axis[Math.round(tt * 44)], l2 = rnd(-.5, .5);
+        el("circle", { cx: f(aj[0] + aj[2] * aj[5] * l2), cy: f(aj[1] + aj[3] * aj[5] * l2), r: f(rnd(.9, 1.5)), fill: "#B73E63", opacity: ".75" }, dots);
+      }
+
+      // light catching the edge (backlit, like the photo)
+      el("path", { d: shape, fill: "none", stroke: "#FFFFFF", "stroke-width": "2.6", opacity: ".45", filter: "url(#rimGlow)" }, g);
+      el("path", { d: shape, fill: "none", stroke: "#FFF4F7", "stroke-width": ".9", opacity: ".9", "stroke-linejoin": "round" }, g);
+
+      // recurved tip curling back
+      var tip = b.axis[44], prev = b.axis[40];
+      var ux = tip[0] - prev[0], uy = tip[1] - prev[1], ul = Math.sqrt(ux * ux + uy * uy); ux /= ul; uy /= ul;
+      var side = rnd(0, 1) > .5 ? 1 : -1, vx = -uy * side, vy = ux * side;
+      var Tx = tip[0], Ty = tip[1];
+      function P(a, c) { return f(Tx + ux * a + vx * c) + "," + f(Ty + uy * a + vy * c); }
+      el("path", { d: "M" + P(-5, -1.5) + " C" + P(2, -1.5) + " " + P(5.5, 3) + " " + P(3, 6) +
+          " C" + P(1, 7.5) + " " + P(-2, 6) + " " + P(-1.5, 3.5) + " C" + P(-1.5, 2) + " " + P(-3, 1) + " " + P(-5, 1.5) + "Z",
+        fill: "#EFA9BC", stroke: "#D27D97", "stroke-width": ".6", "stroke-linejoin": "round" }, g);
+      el("path", { d: "M" + P(-1, 3.5) + " Q" + P(2, 4) + " " + P(2.5, 1.5), fill: "none", stroke: "#FFF2F5", "stroke-width": ".6", opacity: ".8" }, g);
+
       g._data = p;
       petalEls[p.order] = g;
 
-      // word on the petal (kept upright)
-      var rad = p.angle * Math.PI / 180, d = 92;
-      var w = el("text", { x: f(CX + d * Math.sin(rad)), y: f(CY - d * Math.cos(rad)), "text-anchor": "middle", "dominant-baseline": "middle",
-        "font-family": "Cormorant Garamond, Georgia, serif", "font-style": "italic", "font-size": "13", fill: "#8E4252", "letter-spacing": ".3" }, wordGroup);
-      w.textContent = p.word;
-      wordEls[p.order] = w;
+      // word on the tepal (kept upright)
+      var la = b.axis[34], rad = p.angle * Math.PI / 180;
+      var lx = la[0] - CX, ly = la[1] - CY;
+      var wx = CX + lx * Math.cos(rad) - ly * Math.sin(rad), wy = CY + lx * Math.sin(rad) + ly * Math.cos(rad);
+      var w2 = el("text", { x: f(wx), y: f(wy), "text-anchor": "middle", "dominant-baseline": "middle",
+        "font-family": "Cormorant Garamond, Georgia, serif", "font-style": "italic", "font-weight": "500", "font-size": "13",
+        fill: "#5A1A2C", stroke: "#FDEFF3", "stroke-width": "1.8", "stroke-opacity": ".85", "stroke-linejoin": "round", "paint-order": "stroke", "letter-spacing": ".3" }, wordGroup);
+      w2.textContent = p.word;
+      wordEls[p.order] = w2;
     });
+
+    /* ---------- Build the leaves ---------- */
+    var leafGroup = document.getElementById("leaves");
+    var LEAVES = [
+      { x: 199, y: 508, angle: -62, L: 118, W: 15, bend: -.1 },
+      { x: 199, y: 452, angle: -44, L: 150, W: 17, bend: -.12 },
+      { x: 201, y: 404, angle:  48, L: 140, W: 16, bend:  .12 },
+      { x: 200, y: 334, angle: -32, L: 100, W: 12, bend: -.1 },
+      { x: 201, y: 284, angle:  34, L:  84, W: 11, bend:  .1 }
+    ];
+    var leafEls = [];
+    LEAVES.forEach(function (lf) {
+      var outer = el("g", { "class": "leaf" }, leafGroup);
+      var inner = el("g", { transform: "rotate(" + lf.angle + " " + lf.x + " " + lf.y + ")" }, outer);
+      var b = blade(lf.x, lf.y, lf.L, lf.bend, function (t) {
+        var w = lf.W / 2 * Math.pow(Math.sin(Math.PI * Math.pow(t, .55)), .85);
+        return [w, w * .92];
+      }, 30);
+      var axisPts = b.axis.map(function (a) { return [a[0], a[1]]; });
+      // two halves: one in shade, one in light (a folded leaf)
+      el("path", { d: smoothPath(b.left.concat(axisPts.slice().reverse()), true), fill: "url(#leafDark)" }, inner);
+      el("path", { d: smoothPath(b.right.concat(axisPts.slice().reverse()), true), fill: "url(#leafLight)" }, inner);
+      var v = el("g", { fill: "none", "stroke-linecap": "round" }, inner);
+      el("path", { d: bladeLine(b, 0, 0, .96), stroke: "#33492A", "stroke-width": ".8", opacity: ".7" }, v);
+      [-.55, .5].forEach(function (fr) {
+        el("path", { d: bladeLine(b, fr, .05, .9), stroke: fr < 0 ? "#5C7A47" : "#C5D9AE", "stroke-width": ".45", opacity: ".6" }, v);
+      });
+      el("path", { d: outline(b), fill: "none", stroke: "#DCEBC9", "stroke-width": ".7", opacity: ".55" }, inner);
+      outer._data = lf;
+      leafEls.push(outer);
+    });
+
+    /* ---------- Build the bud ---------- */
+    var budEl = document.getElementById("bud");
+    var bb = blade(CX, CY + 4, 112, .02, function (t) {
+      var w = 14.5 * Math.pow(Math.sin(Math.PI * Math.pow(t, .78)), .7) * (1 - .15 * t);
+      return [w, w];
+    }, 30);
+    var budShape = outline(bb);
+    el("path", { d: budShape, fill: "url(#budBody)" }, budEl);
+    el("path", { d: budShape, fill: "url(#budBase)" }, budEl);
+    var ridges = el("g", { fill: "none", "stroke-linecap": "round" }, budEl);
+    el("path", { d: bladeLine(bb, -.42, .06, .95), stroke: "#9E3757", "stroke-width": ".8", opacity: ".55" }, ridges);
+    el("path", { d: bladeLine(bb, .38, .06, .95), stroke: "#9E3757", "stroke-width": ".8", opacity: ".55" }, ridges);
+    el("path", { d: bladeLine(bb, -.12, .1, .9), stroke: "#FFF0F4", "stroke-width": "1.2", opacity: ".55" }, ridges);
+    el("path", { d: budShape, fill: "none", stroke: "#FFE9EF", "stroke-width": ".9", opacity: ".7" }, budEl);
 
     /* ---------- Build the stamens ---------- */
     var stamenGroup = document.getElementById("stamens");
     var filaments = [], anthers = [];
-    [-125, -70, -18, 40, 95, 150].forEach(function (a, i) {
-      var len = 72 + rnd(-6, 10), rad = a * Math.PI / 180;
+    [-128, -72, -16, 42, 98, 152].forEach(function (a) {
+      var len = 80 + rnd(-6, 8), rad = a * Math.PI / 180;
       var ex = CX + len * Math.sin(rad), ey = CY - len * Math.cos(rad);
-      var bend = rnd(-10, 10);
+      var bend = rnd(-14, 14);
       var mx = CX + len * .5 * Math.sin(rad) + bend * Math.cos(rad), my = CY - len * .5 * Math.cos(rad) + bend * Math.sin(rad);
-      filaments.push(el("path", { d: "M" + CX + "," + CY + " Q" + f(mx) + "," + f(my) + " " + f(ex) + "," + f(ey),
-        fill: "none", stroke: "#E8E2C4", "stroke-width": "1.6", "stroke-linecap": "round" }, stamenGroup));
-      var ag = el("g", { transform: "translate(" + f(ex) + "," + f(ey) + ") rotate(" + f(a + 90 + rnd(-15, 15)) + ")" }, stamenGroup);
-      var an = el("ellipse", { cx: 0, cy: 0, rx: 9, ry: 3.6, fill: "#D9A441", stroke: "#A8752A", "stroke-width": ".8" }, ag);
-      el("path", { d: "M-6,-.5 Q0,-2 6,-.5", fill: "none", stroke: "#F3D18A", "stroke-width": ".8", opacity: ".8" }, ag);
+      var d = "M" + CX + "," + CY + " Q" + f(mx) + "," + f(my) + " " + f(ex) + "," + f(ey);
+      filaments.push(el("path", { d: d, fill: "none", stroke: "#DDE5C0", "stroke-width": "1.9", "stroke-linecap": "round" }, stamenGroup));
+      filaments.push(el("path", { d: d, fill: "none", stroke: "#FBFCEF", "stroke-width": ".6", "stroke-linecap": "round", opacity: ".8" }, stamenGroup));
+      var ag = el("g", { transform: "translate(" + f(ex) + "," + f(ey) + ") rotate(" + f(a + 90 + rnd(-18, 18)) + ")" }, stamenGroup);
+      el("ellipse", { cx: 0, cy: 0, rx: 10.5, ry: 3.4, fill: "url(#antherGrad)", stroke: "#5E2418", "stroke-width": ".6" }, ag);
+      el("path", { d: "M-7,-1.2 Q0,-2.6 7,-1.2", fill: "none", stroke: "#F0B060", "stroke-width": ".8", opacity: ".75" }, ag);
+      for (var q = 0; q < 5; q++) el("circle", { cx: f(rnd(-8, 8)), cy: f(rnd(-2, 2)), r: ".55", fill: "#F2C25A", opacity: ".9" }, ag);
       anthers.push(ag);
     });
     // pistil
-    var pistil = el("path", { d: "M" + CX + "," + CY + " Q" + (CX + 6) + "," + (CY - 50) + " " + (CX + 14) + "," + (CY - 92),
-      fill: "none", stroke: "#DCE3C2", "stroke-width": "2.8", "stroke-linecap": "round" }, stamenGroup);
-    var stigma = el("g", { transform: "translate(" + (CX + 14) + "," + (CY - 94) + ")" }, stamenGroup);
-    el("circle", { cx: -2.5, cy: 0, r: 3.2, fill: "#EFE9D2", stroke: "#C9C19A", "stroke-width": ".6" }, stigma);
-    el("circle", { cx: 2.5, cy: 0, r: 3.2, fill: "#EFE9D2", stroke: "#C9C19A", "stroke-width": ".6" }, stigma);
-    el("circle", { cx: 0, cy: -3, r: 3.2, fill: "#F4EFDB", stroke: "#C9C19A", "stroke-width": ".6" }, stigma);
+    var pistil = el("path", { d: "M" + CX + "," + CY + " Q" + (CX + 8) + "," + (CY - 56) + " " + (CX + 16) + "," + (CY - 104),
+      fill: "none", stroke: "#D3DFAF", "stroke-width": "3.2", "stroke-linecap": "round" }, stamenGroup);
+    var stigma = el("g", { transform: "translate(" + (CX + 16) + "," + (CY - 107) + ")" }, stamenGroup);
+    el("circle", { cx: -2.8, cy: .5, r: 3.6, fill: "#E3E9C6", stroke: "#AEB98A", "stroke-width": ".6" }, stigma);
+    el("circle", { cx: 2.8, cy: .5, r: 3.6, fill: "#E3E9C6", stroke: "#AEB98A", "stroke-width": ".6" }, stigma);
+    el("circle", { cx: 0, cy: -3.2, r: 3.6, fill: "#EEF2D8", stroke: "#AEB98A", "stroke-width": ".6" }, stigma);
 
     /* ---------- Small pebbles in the soil ---------- */
     var pebbles = document.getElementById("pebbles");
@@ -571,7 +766,7 @@
     gsap.set(svg, { attr: { viewBox: V1 } });
     gsap.set(root, { "--ink": "#EFE6DA" });
     gsap.set(".bg__layer", { yPercent: 77 });
-    gsap.set(["#halo", "#centerGlow", "#bud", stigma], { opacity: 0 });
+    gsap.set(["#halo", "#centerGlow", "#bud", "#throat", stigma], { opacity: 0 });
     gsap.set(anthers, { scale: 0, opacity: 0, transformOrigin: "50% 50%" });
     gsap.set(wordEls, { opacity: 0 });
 
@@ -612,19 +807,25 @@
     tl.to(".bg__green", { yPercent: -23, duration: 1.3 }, 2)
       .to(root, { "--ink": "#3B3128", duration: .6 }, 2.3)
       .to(svg, { attr: { viewBox: V2 }, duration: 1.3 }, 2)
-      .to(["#stem", "#stemHi"], { strokeDashoffset: 0, duration: 1.5 }, 2.3)
-      .fromTo("#leafL", { svgOrigin: "200 450", rotation: 42, scale: .1, opacity: 0 }, { rotation: 0, scale: 1, opacity: 1, duration: 1 }, 3.1)
-      .fromTo("#leafR", { svgOrigin: "200 402", rotation: -42, scale: .1, opacity: 0 }, { rotation: 0, scale: 1, opacity: 1, duration: 1 }, 3.35);
+      .to(["#stem", "#stemHi"], { strokeDashoffset: 0, duration: 1.5 }, 2.3);
+    // leaves unfold from the stem, lowest first
+    leafEls.forEach(function (lf, i) {
+      var d = lf._data;
+      tl.fromTo(lf, { svgOrigin: d.x + " " + d.y, rotation: -d.angle * .85, scale: .12, opacity: 0 },
+                    { rotation: 0, scale: 1, opacity: 1, duration: .95 }, 2.9 + i * .22);
+    });
     capIn(".cap-2", 2.7);
     tl.to(".cap-2", OUT, 4.15);
 
     /* 3 — THE BLOOM */
     tl.to(".bg__cream", { yPercent: -23, duration: 1.2 }, 4.5)
       .to(svg, { attr: { viewBox: V3 }, duration: 1.2 }, 4.6)
-      .fromTo("#bud", { svgOrigin: "200 198", scale: 0, opacity: 0 }, { scale: 1, opacity: 1, duration: .9 }, 4.8)
+      .to([".vignette", ".rays"], { opacity: 1, duration: 1.6 }, 4.7)
+      .fromTo("#bud", { svgOrigin: "200 199", scale: 0, opacity: 0 }, { scale: 1, opacity: 1, duration: .9 }, 4.8)
       .to(petalEls, { opacity: 1, duration: .3 }, 5.6)
       .to("#bud", { opacity: 0, duration: .4 }, 5.75)
-      .to("#halo", { opacity: 1, duration: 1.5 }, 5.9);
+      .to("#halo", { opacity: 1, duration: 1.5 }, 5.9)
+      .to("#throat", { opacity: 1, duration: .8 }, 6.1);
     capIn(".cap-3", 5);
 
     var BLOOM = 5.9, STEP = .36;
