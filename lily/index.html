@@ -1,0 +1,734 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>If I Were a Lily</title>
+  <meta name="description" content="A personal story told through a lily that grows and blooms as you scroll — from chemical engineering to design." />
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,400;0,500;0,600;1,400;1,500&family=Inter:wght@300;400;500&display=swap" rel="stylesheet" />
+
+  <style>
+    :root {
+      --soil: #2B1D14;
+      --green: #DDE8D5;
+      --cream: #FBF7F2;
+      --gold-bg: #FFF3D6;
+      --blush: #F4C6C9;
+      --gold: #D9A441;
+      --ink: #3B3128;          /* text colour (JS starts it light on the soil) */
+      --serif: "Cormorant Garamond", Georgia, "Times New Roman", serif;
+      --sans: "Inter", system-ui, -apple-system, "Segoe UI", sans-serif;
+    }
+
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+
+    html, body { background: var(--soil); }
+
+    body {
+      font-family: var(--sans);
+      font-weight: 300;
+      color: var(--ink);
+      line-height: 1.6;
+      -webkit-font-smoothing: antialiased;
+      overflow-x: hidden;
+    }
+
+    /* ---------- Background colour layers (rise from the bottom) ---------- */
+    .bg { position: fixed; inset: 0; z-index: 0; pointer-events: none; overflow: hidden; }
+    .bg__soil { position: absolute; inset: 0; background: var(--soil); }
+    .bg__layer {
+      position: absolute; left: 0; top: 0; width: 100%; height: 130%;
+      will-change: transform;
+    }
+    /* soft top edge so each colour rises like light, not a hard wipe */
+    .bg__green { background: linear-gradient(to bottom, rgba(221,232,213,0) 0%, var(--green) 23%); }
+    .bg__cream { background: linear-gradient(to bottom, rgba(251,247,242,0) 0%, var(--cream) 23%); }
+    .bg__gold  { background: linear-gradient(to bottom, rgba(255,243,214,0) 0%, var(--gold-bg) 23%); }
+
+    /* paper grain for a hand-made feel */
+    .grain {
+      position: fixed; inset: 0; z-index: 50; pointer-events: none; opacity: .07;
+      background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='160' height='160'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='.85' numOctaves='3' stitchTiles='stitch'/%3E%3CfeColorMatrix values='0 0 0 0 .5 0 0 0 0 .4 0 0 0 0 .3 0 0 0 .9 0'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");
+    }
+
+    /* ---------- Pinned stage ---------- */
+    .stage {
+      position: relative; z-index: 1;
+      height: 100vh; height: 100svh;
+      overflow: hidden;
+    }
+
+    .lily-wrap { position: absolute; left: 0; right: 0; top: 30%; bottom: 0; }
+    .lily-wrap svg { width: 100%; height: 100%; display: block; overflow: visible; }
+
+    .captions {
+      position: absolute; top: 6%; left: 0; right: 0;
+      padding: 0 28px 0 48px;
+      text-align: center;
+      z-index: 3;
+    }
+    .cap {
+      position: absolute; left: 48px; right: 28px; top: 0;
+      opacity: 0; visibility: hidden;
+    }
+    .cap-title { opacity: 1; visibility: visible; }
+
+    .cap__label {
+      font-family: var(--sans); font-weight: 500;
+      font-size: 11px; letter-spacing: .24em; text-transform: uppercase;
+      opacity: .6; margin-bottom: 14px;
+    }
+    .cap h1 {
+      font-family: var(--serif); font-weight: 400;
+      font-size: clamp(2.6rem, 7vw, 5rem); line-height: 1.02; letter-spacing: -.01em;
+    }
+    .cap h1 em { font-style: italic; }
+    .cap h2 {
+      font-family: var(--serif); font-weight: 400;
+      font-size: clamp(1.7rem, 3.6vw, 3rem); line-height: 1.15;
+    }
+    .cap h2 em { font-style: italic; }
+    .cap p.sub { margin-top: 14px; font-size: .95rem; opacity: .7; }
+
+    .scroll-hint {
+      position: absolute; bottom: 4%; left: 50%; transform: translateX(-50%);
+      z-index: 3; text-align: center;
+      font-size: 11px; letter-spacing: .24em; text-transform: uppercase; color: #EFE6DA; opacity: .65;
+    }
+    .scroll-hint::after {
+      content: ""; display: block; width: 1px; height: 46px; margin: 12px auto 0;
+      background: linear-gradient(#EFE6DA, transparent);
+      transform-origin: top; animation: hint 2.8s ease-in-out infinite;
+    }
+    @keyframes hint { 0% { transform: scaleY(0); } 50% { transform: scaleY(1); } 100% { transform: scaleY(1); opacity: 0; } }
+
+    /* desktop: words on the left, lily on the right */
+    @media (min-width: 900px) and (min-aspect-ratio: 1/1) {
+      .lily-wrap { top: 0; left: 36vw; right: 2vw; }
+      .captions { top: 50%; left: 9vw; right: auto; width: 30vw; padding: 0; text-align: left; transform: translateY(-50%); }
+      .cap { left: 0; right: 0; top: 50%; transform: translateY(-50%); }
+      .scroll-hint { left: 9vw; transform: none; text-align: left; }
+      .scroll-hint::after { margin-left: 0; }
+    }
+
+    /* pollen canvas */
+    .pollen { position: fixed; inset: 0; width: 100%; height: 100%; z-index: 2; pointer-events: none; }
+
+    /* ---------- Progress line ---------- */
+    .progress {
+      position: fixed; left: 22px; top: 50%; transform: translateY(-50%);
+      height: 42vh; z-index: 10; color: var(--ink);
+    }
+    .progress__track { position: absolute; left: 0; top: 0; bottom: 0; width: 1px; background: currentColor; opacity: .2; }
+    .progress__fill { position: absolute; left: 0; top: 0; width: 1px; height: 100%; background: currentColor; transform-origin: top; transform: scaleY(0); opacity: .75; }
+    .progress ol { list-style: none; }
+    .progress li {
+      position: absolute; left: 0; transform: translate(-50%, -50%);
+      display: flex; align-items: center;
+    }
+    .progress li:nth-child(1) { top: 0; }
+    .progress li:nth-child(2) { top: 33.333%; }
+    .progress li:nth-child(3) { top: 66.666%; }
+    .progress li:nth-child(4) { top: 100%; }
+    .progress .dot {
+      width: 7px; height: 7px; border-radius: 50%;
+      border: 1px solid currentColor; background: transparent;
+      transition: background .6s ease, transform .6s ease;
+    }
+    .progress li.is-active .dot { background: currentColor; transform: scale(1.25); }
+    .progress .lbl {
+      position: absolute; left: 16px; white-space: nowrap;
+      font-size: 10px; letter-spacing: .2em; text-transform: uppercase;
+      opacity: 0; transition: opacity .6s ease;
+    }
+    .progress li.is-active .lbl { opacity: .7; }
+    @media (max-width: 600px) {
+      .progress { left: 18px; height: 34vh; }
+      .progress .lbl { display: none; }
+    }
+
+    /* ---------- Ending ---------- */
+    .ending {
+      position: relative; z-index: 4;
+      padding: 10vh 20px 6vh;
+      display: flex; flex-direction: column; align-items: center;
+      color: #3B3128;
+      /* soil continues from the stage, then fades into gold */
+      background: linear-gradient(to bottom, var(--soil) 0, rgba(43, 29, 20, 0) 45vh);
+    }
+    .static .ending { background: none; }
+    .static .bg__layer { top: -30%; }
+    .card {
+      max-width: 620px; width: 100%;
+      background: rgba(255, 253, 250, .78);
+      -webkit-backdrop-filter: blur(10px); backdrop-filter: blur(10px);
+      border: 1px solid rgba(217, 164, 65, .25);
+      border-radius: 4px;
+      padding: clamp(32px, 6vw, 64px);
+      box-shadow: 0 30px 80px -40px rgba(90, 60, 20, .35);
+    }
+    .card__label { font-size: 11px; letter-spacing: .24em; text-transform: uppercase; opacity: .55; margin-bottom: 18px; }
+    .card h3 { font-family: var(--serif); font-weight: 400; font-size: clamp(1.8rem, 4vw, 2.4rem); line-height: 1.15; margin-bottom: 22px; }
+    .card h3 em { font-style: italic; }
+    .card p { font-size: 1rem; line-height: 1.85; margin-bottom: 1em; }
+    .card p:last-child { margin-bottom: 0; }
+    .card .sign { font-family: var(--serif); font-style: italic; font-size: 1.3rem; margin-top: 26px; }
+
+    footer {
+      margin-top: 14vh; text-align: center;
+      font-size: 12px; letter-spacing: .2em; text-transform: uppercase; opacity: .6;
+    }
+    footer span { display: block; margin-top: 10px; width: 1px; height: 30px; margin: 0 auto 18px; background: currentColor; opacity: .5; }
+
+    /* ---------- Static story list (reduced motion / no JS) ---------- */
+    .story { display: none; }
+
+    /* ---------- Reduced motion: show the final bloomed state ---------- */
+    .static body, html.static { background: var(--gold-bg); }
+    .static .cap:not(.cap-title) { display: none; }
+    .static .scroll-hint, .static .pollen { display: none; }
+    .static .progress { display: none; }
+    .static .story {
+      display: block; position: relative; z-index: 4;
+      max-width: 620px; margin: 6vh auto 0; padding: 0 20px; color: #3B3128;
+    }
+    .story li { list-style: none; padding: 26px 0; border-top: 1px solid rgba(59,49,40,.15); }
+    .story li .cap__label { margin-bottom: 8px; }
+    .story li h2 { font-family: var(--serif); font-weight: 400; font-size: 1.7rem; line-height: 1.2; }
+    .story .message { font-family: var(--serif); font-style: italic; font-size: 1.6rem; text-align: center; padding: 30px 0 0; border-top: 1px solid rgba(59,49,40,.15); }
+
+    @media (prefers-reduced-motion: reduce) {
+      .scroll-hint::after { animation: none; }
+    }
+  </style>
+</head>
+<body>
+
+  <!-- background colours -->
+  <div class="bg" aria-hidden="true">
+    <div class="bg__soil"></div>
+    <div class="bg__layer bg__green"></div>
+    <div class="bg__layer bg__cream"></div>
+    <div class="bg__layer bg__gold"></div>
+  </div>
+  <div class="grain" aria-hidden="true"></div>
+  <canvas class="pollen" aria-hidden="true"></canvas>
+
+  <!-- progress line -->
+  <nav class="progress" aria-label="Story progress">
+    <div class="progress__track"></div>
+    <div class="progress__fill"></div>
+    <ol>
+      <li class="is-active"><span class="dot"></span><span class="lbl">The Bulb</span></li>
+      <li><span class="dot"></span><span class="lbl">The Stem</span></li>
+      <li><span class="dot"></span><span class="lbl">The Bloom</span></li>
+      <li><span class="dot"></span><span class="lbl">The Pollen</span></li>
+    </ol>
+  </nav>
+
+  <main>
+    <!-- ================= PINNED STAGE ================= -->
+    <section class="stage" aria-label="The lily">
+      <div class="captions">
+        <div class="cap cap-title">
+          <p class="cap__label">A story in four stages</p>
+          <h1>If I Were<br /><em>a Lily</em></h1>
+          <p class="sub">Growing quietly, then opening.</p>
+        </div>
+        <div class="cap cap-1">
+          <p class="cap__label">01 — The Bulb</p>
+          <h2>Every bloom starts where <em>no one can see.</em></h2>
+        </div>
+        <div class="cap cap-2">
+          <p class="cap__label">02 — The Stem</p>
+          <h2>I grew quietly — <em>from engineering into design.</em></h2>
+        </div>
+        <div class="cap cap-3">
+          <p class="cap__label">03 — The Bloom</p>
+          <h2>When the time came, <em>I opened.</em></h2>
+        </div>
+        <div class="cap cap-4">
+          <p class="cap__label">04 — The Pollen</p>
+          <h2>I want my work to <em>leave a mark.</em></h2>
+        </div>
+        <div class="cap cap-5">
+          <p class="cap__label">If I were a lily</p>
+          <h2>Growth doesn’t always show. <em>But when it’s time, it blooms.</em></h2>
+        </div>
+      </div>
+
+      <div class="lily-wrap">
+        <svg id="lily" viewBox="-30 20 460 720" preserveAspectRatio="xMidYMid meet" role="img" aria-label="A hand-drawn lily: bulb, roots, stem, leaves and an open flower">
+          <defs>
+            <radialGradient id="petalGrad" gradientUnits="userSpaceOnUse" cx="200" cy="195" r="160">
+              <stop offset="0"    stop-color="#DCE3C2" />
+              <stop offset=".08"  stop-color="#EFB3BA" />
+              <stop offset=".24"  stop-color="#F4C6C9" />
+              <stop offset=".58"  stop-color="#FBE9E8" />
+              <stop offset="1"    stop-color="#FFFDFB" />
+            </radialGradient>
+            <linearGradient id="budGrad" x1="0" y1="1" x2="0" y2="0">
+              <stop offset="0"   stop-color="#9DB585" />
+              <stop offset=".35" stop-color="#D9B3A9" />
+              <stop offset=".75" stop-color="#EDB0B8" />
+              <stop offset="1"   stop-color="#F7D6D8" />
+            </linearGradient>
+            <linearGradient id="bulbGrad" x1="0" y1="0" x2="1" y2="1">
+              <stop offset="0" stop-color="#C9A37C" />
+              <stop offset=".6" stop-color="#9A7553" />
+              <stop offset="1" stop-color="#6E4F35" />
+            </linearGradient>
+            <linearGradient id="stemGrad" gradientUnits="userSpaceOnUse" x1="0" y1="566" x2="0" y2="190">
+              <stop offset="0" stop-color="#5E7B4C" />
+              <stop offset="1" stop-color="#93AE7C" />
+            </linearGradient>
+            <linearGradient id="leafGrad" x1="0" y1="1" x2="1" y2="0">
+              <stop offset="0" stop-color="#5E7B4C" />
+              <stop offset="1" stop-color="#9DB888" />
+            </linearGradient>
+            <linearGradient id="soilGrad" x1="0" y1="0" x2="0" y2="1">
+              <stop offset="0" stop-color="#3A2819" />
+              <stop offset=".12" stop-color="#2B1D14" />
+            </linearGradient>
+            <radialGradient id="glowGrad">
+              <stop offset="0" stop-color="#FFF4D2" stop-opacity=".95" />
+              <stop offset=".5" stop-color="#FCE6B5" stop-opacity=".35" />
+              <stop offset="1" stop-color="#FCE6B5" stop-opacity="0" />
+            </radialGradient>
+            <radialGradient id="haloGrad">
+              <stop offset="0" stop-color="#FFFFFF" stop-opacity=".7" />
+              <stop offset="1" stop-color="#FFFFFF" stop-opacity="0" />
+            </radialGradient>
+          </defs>
+
+          <!-- soil (does not sway) -->
+          <path id="soil" fill="url(#soilGrad)"
+            d="M-1200,566 L120,566 Q160,562 185,565 Q200,567 215,564 Q248,560 290,566 L1600,566 L1600,2600 L-1200,2600 Z" />
+          <g id="pebbles"></g>
+
+          <!-- roots -->
+          <g id="roots" fill="none" stroke="#D8C2A4" stroke-width="1.1" stroke-linecap="round" opacity=".85">
+            <path d="M196,617 C190,640 178,658 172,690" />
+            <path d="M200,619 C201,646 195,670 199,708" />
+            <path d="M204,617 C212,640 224,662 231,692" />
+            <path d="M189,614 C176,627 160,641 147,666" />
+            <path d="M211,614 C226,627 243,642 255,664" />
+            <path d="M198,618 C186,652 191,676 181,704" stroke-width=".8" />
+            <path d="M203,618 C215,652 209,678 219,703" stroke-width=".8" />
+            <path d="M173,682 C166,688 160,690 152,698" stroke-width=".6" />
+            <path d="M228,684 C236,690 242,694 248,702" stroke-width=".6" />
+            <path d="M160,648 C152,650 146,656 140,660" stroke-width=".6" />
+            <path d="M246,652 C254,654 259,660 264,668" stroke-width=".6" />
+          </g>
+
+          <!-- bulb -->
+          <g id="bulb">
+            <path fill="url(#bulbGrad)" stroke="#5A3F2A" stroke-width=".9"
+              d="M200,546 C221,552 238,571 236,593 C234,610 220,620 200,620 C180,620 165,610 164,593 C162,571 179,552 200,546 Z" />
+            <g fill="none" stroke="#5A3F2A" stroke-width=".9" stroke-linecap="round" opacity=".55">
+              <path d="M200,549 C190,566 186,590 191,617" />
+              <path d="M200,549 C211,566 215,590 209,617" />
+              <path d="M180,561 C172,580 174,603 183,615" />
+              <path d="M220,561 C228,580 226,603 217,615" />
+              <path d="M170,585 C169,598 173,608 179,613" opacity=".6" />
+              <path d="M230,585 C231,598 227,608 221,613" opacity=".6" />
+            </g>
+            <path fill="none" stroke="#F3E2C8" stroke-width="1.2" stroke-linecap="round" opacity=".35" d="M186,560 C180,572 178,586 180,598" />
+            <path fill="#A9C28F" d="M196,553 Q199,536 201,532 Q203,540 205,553 Z" />
+          </g>
+
+          <!-- everything above the soil sways together -->
+          <g id="sway">
+            <!-- stem -->
+            <path id="stem" fill="none" stroke="url(#stemGrad)" stroke-width="5.5" stroke-linecap="round"
+              d="M200,560 C202,480 197,362 201,264 C203,234 201,214 200,196" />
+            <path id="stemHi" fill="none" stroke="#C7D9B5" stroke-width="1" stroke-linecap="round" opacity=".55"
+              d="M201.5,556 C203.5,478 198.5,362 202.5,264 C204,236 202,216 201.2,200" />
+
+            <!-- leaves -->
+            <g id="leafL">
+              <path fill="url(#leafGrad)" stroke="#4E6A3E" stroke-width=".8"
+                d="M199,452 C176,441 141,421 118,389 C108,375 100,361 93,348 C108,357 125,369 141,385 C161,405 182,428 201,446 Z" />
+              <path fill="none" stroke="#3F5832" stroke-width=".8" stroke-linecap="round" opacity=".7"
+                d="M199,449 C170,430 130,396 95,351" />
+              <path fill="none" stroke="#C7D9B5" stroke-width=".6" opacity=".45"
+                d="M196,445 C168,425 135,395 112,372" />
+            </g>
+            <g id="leafR">
+              <path fill="url(#leafGrad)" stroke="#4E6A3E" stroke-width=".8"
+                d="M201,404 C224,394 258,376 280,348 C290,336 298,322 305,311 C291,318 275,330 259,344 C239,362 218,384 199,398 Z" />
+              <path fill="none" stroke="#3F5832" stroke-width=".8" stroke-linecap="round" opacity=".7"
+                d="M201,401 C230,384 270,350 303,314" />
+              <path fill="none" stroke="#C7D9B5" stroke-width=".6" opacity=".45"
+                d="M204,396 C232,378 262,352 285,328" />
+            </g>
+
+            <!-- soft light behind the flower -->
+            <circle id="halo" cx="200" cy="195" r="175" fill="url(#haloGrad)" />
+
+            <!-- closed bud -->
+            <g id="bud">
+              <path fill="url(#budGrad)" stroke="#C99AA0" stroke-width=".8"
+                d="M200,200 C186,190 182,160 188,128 C192,110 197,100 200,93 C203,100 208,110 212,128 C218,160 214,190 200,200 Z" />
+              <g fill="none" stroke="#B9838C" stroke-width=".7" stroke-linecap="round" opacity=".55">
+                <path d="M200,197 C197,170 197,130 200,97" />
+                <path d="M193,190 C188,160 190,128 197,104" />
+                <path d="M207,190 C212,160 210,128 203,104" />
+              </g>
+            </g>
+
+            <!-- petals, words and stamens are drawn by JS -->
+            <g id="petals"></g>
+            <g id="words"></g>
+            <circle id="centerGlow" cx="200" cy="195" r="46" fill="url(#glowGrad)" />
+            <g id="stamens"></g>
+            <g id="staticPollen"></g>
+          </g>
+        </svg>
+      </div>
+
+      <div class="scroll-hint">Scroll slowly</div>
+    </section>
+
+    <!-- shown only for reduced motion / no JS -->
+    <section class="story" aria-label="The story">
+      <ol>
+        <li><p class="cap__label">01 — The Bulb</p><h2>Every bloom starts where no one can see.</h2></li>
+        <li><p class="cap__label">02 — The Stem</p><h2>I grew quietly — from engineering into design.</h2></li>
+        <li><p class="cap__label">03 — The Bloom</p><h2>When the time came, I opened.</h2></li>
+        <li><p class="cap__label">04 — The Pollen</p><h2>I want my work to leave a mark.</h2></li>
+      </ol>
+      <p class="message">Growth doesn’t always show. But when it’s time, it blooms.</p>
+    </section>
+
+    <!-- ================= ENDING ================= -->
+    <section class="ending" aria-label="Reflection">
+      <article class="card">
+        <p class="card__label">A small reflection</p>
+        <h3>Like a lily, <em>I took my time.</em></h3>
+        <!-- ✎ Edit this reflection to make it fully yours -->
+        <p>I started in chemical engineering. For a long time I learned in silence — formulas, labs, late nights. Nobody could see the roots that were growing.</p>
+        <p>Then I found design, and something opened. Today I try to make work that is calm, honest and useful — work that stays with people after they leave.</p>
+        <p>I am still growing. But I am no longer hiding underground.</p>
+        <p class="sign">— Himanshi</p>
+      </article>
+      <footer>
+        <span></span>
+        Himanshi — M.Des, DTU
+      </footer>
+    </section>
+  </main>
+
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.5/gsap.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.5/ScrollTrigger.min.js"></script>
+  <script>
+  (function () {
+    "use strict";
+
+    var NS = "http://www.w3.org/2000/svg";
+    var CX = 200, CY = 195;               // centre of the flower
+    var svg = document.getElementById("lily");
+
+    // small seeded random, so the lily looks the same every visit
+    var seed = 7;
+    function rnd(a, b) {
+      seed = (seed * 16807) % 2147483647;
+      var r = (seed - 1) / 2147483646;
+      return a + r * (b - a);
+    }
+    function el(tag, attrs, parent) {
+      var n = document.createElementNS(NS, tag);
+      for (var k in attrs) n.setAttribute(k, attrs[k]);
+      if (parent) parent.appendChild(n);
+      return n;
+    }
+    function f(n) { return Math.round(n * 10) / 10; }
+
+    /* ---------- Build the petals ---------- */
+    // final angle (0 = straight up), opening order, word
+    var PETALS = [
+      { angle: -150, order: 5, word: "Growing" },
+      { angle:  150, order: 4, word: "Brave" },
+      { angle:  -90, order: 3, word: "Honest" },
+      { angle:   90, order: 2, word: "Creative" },
+      { angle:  -30, order: 1, word: "Calm" },
+      { angle:   30, order: 0, word: "Curious" }
+    ];
+
+    function petalPath(L, W, c, j) {
+      // j = jitter for the sketchy second outline
+      function J() { return j ? rnd(-j, j) : 0; }
+      var x = CX, y = CY;
+      return "M" + x + "," + y +
+        " C" + f(x - W * .22 + J()) + "," + f(y - L * .12 + J()) + " " + f(x - W * .6 + J()) + "," + f(y - L * .3 + J()) + " " + f(x - W * .52 + J()) + "," + f(y - L * .56 + J()) +
+        " C" + f(x - W * .44 + J()) + "," + f(y - L * .78 + J()) + " " + f(x - W * .14 + c * .5 + J()) + "," + f(y - L * .94 + J()) + " " + f(x + c) + "," + f(y - L) +
+        " C" + f(x + c + 7) + "," + f(y - L - 3) + " " + f(x + c + 10) + "," + f(y - L + 5) + " " + f(x + c + 5) + "," + f(y - L + 10) +
+        " C" + f(x + W * .18 + c * .5 + J()) + "," + f(y - L * .88 + J()) + " " + f(x + W * .44 + J()) + "," + f(y - L * .76 + J()) + " " + f(x + W * .52 + J()) + "," + f(y - L * .55 + J()) +
+        " C" + f(x + W * .6 + J()) + "," + f(y - L * .3 + J()) + " " + f(x + W * .22 + J()) + "," + f(y - L * .12 + J()) + " " + x + "," + y + "Z";
+    }
+
+    var petalGroup = document.getElementById("petals");
+    var wordGroup = document.getElementById("words");
+    var petalEls = [], wordEls = [];
+
+    PETALS.forEach(function (p) {
+      var L = 150 + rnd(-8, 8), W = 60 + rnd(-6, 6), c = rnd(-6, 6);
+      var g = el("g", { "class": "petal", transform: "rotate(" + p.angle + " " + CX + " " + CY + ")" }, petalGroup);
+
+      el("path", { d: petalPath(L, W, c, 0), fill: "url(#petalGrad)", stroke: "#EBC3C6", "stroke-width": ".8", "stroke-linejoin": "round" }, g);
+      // second, slightly wobbly outline = hand-drawn feel
+      el("path", { d: petalPath(L, W, c, 1.6), fill: "none", stroke: "#D99AA4", "stroke-width": ".55", opacity: ".45" }, g);
+      // veins
+      el("path", { d: "M" + CX + "," + (CY - 4) + " Q" + f(CX + c * .3) + "," + f(CY - L * .5) + " " + f(CX + c * .85) + "," + f(CY - L * .9),
+        fill: "none", stroke: "#E2A3AC", "stroke-width": ".9", "stroke-linecap": "round", opacity: ".7" }, g);
+      [-1, 1].forEach(function (s) {
+        el("path", { d: "M" + (CX + s * 3) + "," + (CY - 8) + " Q" + f(CX + s * W * .28) + "," + f(CY - L * .45) + " " + f(CX + s * W * .2 + c * .4) + "," + f(CY - L * .8),
+          fill: "none", stroke: "#E6B0B6", "stroke-width": ".6", "stroke-linecap": "round", opacity: ".4" }, g);
+      });
+      // freckles near the base
+      var n = Math.round(rnd(10, 15));
+      for (var i = 0; i < n; i++) {
+        var t = rnd(.12, .46);
+        el("circle", { cx: f(CX + rnd(-1, 1) * W * .26 * (t / .46 + .3)), cy: f(CY - L * t), r: f(rnd(.6, 1.5)),
+          fill: "#B5566A", opacity: f(rnd(.3, .7)) }, g);
+      }
+      g._data = p;
+      petalEls[p.order] = g;
+
+      // word on the petal (kept upright)
+      var rad = p.angle * Math.PI / 180, d = 92;
+      var w = el("text", { x: f(CX + d * Math.sin(rad)), y: f(CY - d * Math.cos(rad)), "text-anchor": "middle", "dominant-baseline": "middle",
+        "font-family": "Cormorant Garamond, Georgia, serif", "font-style": "italic", "font-size": "13", fill: "#8E4252", "letter-spacing": ".3" }, wordGroup);
+      w.textContent = p.word;
+      wordEls[p.order] = w;
+    });
+
+    /* ---------- Build the stamens ---------- */
+    var stamenGroup = document.getElementById("stamens");
+    var filaments = [], anthers = [];
+    [-125, -70, -18, 40, 95, 150].forEach(function (a, i) {
+      var len = 72 + rnd(-6, 10), rad = a * Math.PI / 180;
+      var ex = CX + len * Math.sin(rad), ey = CY - len * Math.cos(rad);
+      var bend = rnd(-10, 10);
+      var mx = CX + len * .5 * Math.sin(rad) + bend * Math.cos(rad), my = CY - len * .5 * Math.cos(rad) + bend * Math.sin(rad);
+      filaments.push(el("path", { d: "M" + CX + "," + CY + " Q" + f(mx) + "," + f(my) + " " + f(ex) + "," + f(ey),
+        fill: "none", stroke: "#E8E2C4", "stroke-width": "1.6", "stroke-linecap": "round" }, stamenGroup));
+      var ag = el("g", { transform: "translate(" + f(ex) + "," + f(ey) + ") rotate(" + f(a + 90 + rnd(-15, 15)) + ")" }, stamenGroup);
+      var an = el("ellipse", { cx: 0, cy: 0, rx: 9, ry: 3.6, fill: "#D9A441", stroke: "#A8752A", "stroke-width": ".8" }, ag);
+      el("path", { d: "M-6,-.5 Q0,-2 6,-.5", fill: "none", stroke: "#F3D18A", "stroke-width": ".8", opacity: ".8" }, ag);
+      anthers.push(ag);
+    });
+    // pistil
+    var pistil = el("path", { d: "M" + CX + "," + CY + " Q" + (CX + 6) + "," + (CY - 50) + " " + (CX + 14) + "," + (CY - 92),
+      fill: "none", stroke: "#DCE3C2", "stroke-width": "2.8", "stroke-linecap": "round" }, stamenGroup);
+    var stigma = el("g", { transform: "translate(" + (CX + 14) + "," + (CY - 94) + ")" }, stamenGroup);
+    el("circle", { cx: -2.5, cy: 0, r: 3.2, fill: "#EFE9D2", stroke: "#C9C19A", "stroke-width": ".6" }, stigma);
+    el("circle", { cx: 2.5, cy: 0, r: 3.2, fill: "#EFE9D2", stroke: "#C9C19A", "stroke-width": ".6" }, stigma);
+    el("circle", { cx: 0, cy: -3, r: 3.2, fill: "#F4EFDB", stroke: "#C9C19A", "stroke-width": ".6" }, stigma);
+
+    /* ---------- Small pebbles in the soil ---------- */
+    var pebbles = document.getElementById("pebbles");
+    for (var k = 0; k < 40; k++) {
+      el("ellipse", { cx: f(rnd(40, 360)), cy: f(rnd(578, 740)), rx: f(rnd(.8, 2.6)), ry: f(rnd(.6, 1.8)), fill: "#4A3626", opacity: f(rnd(.4, .9)) }, pebbles);
+    }
+
+    /* ---------- Reduced motion or no GSAP: show final bloom ---------- */
+    var reduce = window.matchMedia && window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+    if (reduce || !window.gsap || !window.ScrollTrigger) {
+      document.documentElement.classList.add("static");
+      var sp = document.getElementById("staticPollen");
+      for (var q = 0; q < 26; q++) {
+        el("circle", { cx: f(rnd(60, 360)), cy: f(rnd(20, 200)), r: f(rnd(.8, 2)), fill: "#D9A441", opacity: f(rnd(.3, .8)) }, sp);
+      }
+      return;
+    }
+
+    /* =================== ANIMATION =================== */
+    gsap.registerPlugin(ScrollTrigger);
+    ScrollTrigger.config({ ignoreMobileResize: true });
+
+    var root = document.documentElement;
+    var V1 = "110 500 180 220";   // close on the bulb
+    var V2 = "0 150 400 580";     // stem and leaves
+    var V3 = "20 20 360 360";     // the flower
+    var V4 = "0 0 400 410";       // a little wider for the pollen
+    var VE = "-30 20 460 720";    // the whole lily
+
+    function prepDraw(path) {
+      var len = path.getTotalLength();
+      gsap.set(path, { strokeDasharray: len + " " + len, strokeDashoffset: len });
+    }
+
+    var roots = gsap.utils.toArray("#roots path");
+    roots.forEach(prepDraw);
+    prepDraw(document.getElementById("stem"));
+    prepDraw(document.getElementById("stemHi"));
+    filaments.forEach(prepDraw);
+    prepDraw(pistil);
+
+    gsap.set(svg, { attr: { viewBox: V1 } });
+    gsap.set(root, { "--ink": "#EFE6DA" });
+    gsap.set(".bg__layer", { yPercent: 77 });
+    gsap.set(["#halo", "#centerGlow", "#bud", stigma], { opacity: 0 });
+    gsap.set(anthers, { scale: 0, opacity: 0, transformOrigin: "50% 50%" });
+    gsap.set(wordEls, { opacity: 0 });
+
+    // closed petals sit together like a bud
+    petalEls.forEach(function (p) {
+      gsap.set(p, { svgOrigin: CX + " " + CY, rotation: p._data.angle * .06, scaleX: .2, scaleY: .68, opacity: 0 });
+    });
+
+    var STAGES = [0, 2, 4.5, 8.6, 10.8];   // timeline time where each stage starts
+    var sway = { amp: 0 };
+    var pollen = { level: 0 };
+
+    var tl = gsap.timeline({
+      defaults: { ease: "sine.inOut" },
+      scrollTrigger: {
+        trigger: ".stage",
+        start: "top top",
+        end: "+=760%",
+        pin: true,
+        scrub: true,
+        anticipatePin: 1,
+        onUpdate: updateProgress
+      }
+    });
+
+    var IN  = { autoAlpha: 1, y: 0, duration: .55 };
+    var OUT = { autoAlpha: 0, y: -16, duration: .45 };
+    function capIn(sel, at) { tl.fromTo(sel, { autoAlpha: 0, y: 24 }, IN, at); }
+
+    /* 1 — THE BULB */
+    tl.to(".scroll-hint", { autoAlpha: 0, duration: .3 }, .05)
+      .to(".cap-title", OUT, .15)
+      .to(roots, { strokeDashoffset: 0, duration: 1.4, stagger: .07 }, .3);
+    capIn(".cap-1", .6);
+    tl.to(".cap-1", OUT, 1.75);
+
+    /* 2 — THE STEM */
+    tl.to(".bg__green", { yPercent: -23, duration: 1.3 }, 2)
+      .to(root, { "--ink": "#3B3128", duration: .6 }, 2.3)
+      .to(svg, { attr: { viewBox: V2 }, duration: 1.3 }, 2)
+      .to(["#stem", "#stemHi"], { strokeDashoffset: 0, duration: 1.5 }, 2.3)
+      .fromTo("#leafL", { svgOrigin: "200 450", rotation: 42, scale: .1, opacity: 0 }, { rotation: 0, scale: 1, opacity: 1, duration: 1 }, 3.1)
+      .fromTo("#leafR", { svgOrigin: "200 402", rotation: -42, scale: .1, opacity: 0 }, { rotation: 0, scale: 1, opacity: 1, duration: 1 }, 3.35);
+    capIn(".cap-2", 2.7);
+    tl.to(".cap-2", OUT, 4.15);
+
+    /* 3 — THE BLOOM */
+    tl.to(".bg__cream", { yPercent: -23, duration: 1.2 }, 4.5)
+      .to(svg, { attr: { viewBox: V3 }, duration: 1.2 }, 4.6)
+      .fromTo("#bud", { svgOrigin: "200 198", scale: 0, opacity: 0 }, { scale: 1, opacity: 1, duration: .9 }, 4.8)
+      .to(petalEls, { opacity: 1, duration: .3 }, 5.6)
+      .to("#bud", { opacity: 0, duration: .4 }, 5.75)
+      .to("#halo", { opacity: 1, duration: 1.5 }, 5.9);
+    capIn(".cap-3", 5);
+
+    var BLOOM = 5.9, STEP = .36;
+    petalEls.forEach(function (p, i) {
+      var at = BLOOM + i * STEP;
+      tl.to(p, { svgOrigin: CX + " " + CY, rotation: p._data.angle, scaleX: 1, scaleY: 1, duration: .9 }, at)
+        .fromTo(wordEls[i], { opacity: 0, y: 6 }, { opacity: 1, y: 0, duration: .4 }, at + .55);
+    });
+    tl.to(".cap-3", OUT, 8.3);
+
+    /* 4 — THE POLLEN */
+    tl.to(".bg__gold", { yPercent: -23, duration: 1.2 }, 8.6)
+      .to(svg, { attr: { viewBox: V4 }, duration: 1.2 }, 8.6)
+      .to("#centerGlow", { opacity: 1, duration: .8 }, 8.8)
+      .to(filaments.concat(pistil), { strokeDashoffset: 0, duration: .8, stagger: .06 }, 8.8)
+      .to(stigma, { opacity: 1, duration: .3 }, 9.5)
+      .to(anthers, { scale: 1, opacity: 1, duration: .5, stagger: .06 }, 9.2)
+      .to(pollen, { level: 1, duration: 1 }, 9.4);
+    capIn(".cap-4", 9);
+    tl.to(".cap-4", OUT, 10.5);
+
+    /* 5 — ENDING */
+    tl.to(svg, { attr: { viewBox: VE }, duration: 1.2 }, 10.8)
+      .to(sway, { amp: 1, duration: 1 }, 11)
+      .to(pollen, { level: .45, duration: 1 }, 11);
+    capIn(".cap-5", 11.2);
+    tl.to({}, { duration: .6 }, 12);
+
+    /* ---------- Progress line ---------- */
+    var fill = document.querySelector(".progress__fill");
+    var dots = document.querySelectorAll(".progress li");
+    function updateProgress() {
+      var t = tl.time(), frac = 1, active = 3;
+      for (var i = 0; i < 3; i++) {
+        if (t < STAGES[i + 1]) { frac = (i + (t - STAGES[i]) / (STAGES[i + 1] - STAGES[i])) / 3; active = i; break; }
+      }
+      fill.style.transform = "scaleY(" + Math.min(1, Math.max(0, frac)) + ")";
+      for (var d = 0; d < dots.length; d++) dots[d].classList.toggle("is-active", d === active);
+    }
+    updateProgress();
+
+    /* ---------- Sway + pollen (one gentle loop) ---------- */
+    var swayEl = document.getElementById("sway");
+    var canvas = document.querySelector(".pollen");
+    var ctx = canvas.getContext("2d");
+    var dpr = Math.min(window.devicePixelRatio || 1, 2);
+    var W = 0, H = 0, parts = [], spawnAcc = 0;
+    var mobile = window.innerWidth < 700;
+
+    function resize() {
+      W = window.innerWidth; H = window.innerHeight;
+      canvas.width = W * dpr; canvas.height = H * dpr;
+      ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+    }
+    resize();
+    window.addEventListener("resize", resize);
+
+    function spawn() {
+      var a = anthers[(Math.random() * anthers.length) | 0].getBoundingClientRect();
+      parts.push({
+        x: a.left + a.width / 2 + (Math.random() - .5) * 8,
+        y: a.top + a.height / 2 + (Math.random() - .5) * 8,
+        vx: .15 + Math.random() * .45,
+        vy: -(.25 + Math.random() * .5),
+        r: .8 + Math.random() * 1.8,
+        ph: Math.random() * 6.28,
+        life: 0,
+        max: 4 + Math.random() * 5
+      });
+    }
+
+    var time = 0;
+    gsap.ticker.add(function (_t, dms) {
+      var dt = Math.min(dms, 50) / 1000;
+      time += dt;
+
+      // gentle sway around the soil line
+      var deg = Math.sin(time * .9) * 1.4 * sway.amp + Math.sin(time * 2.1) * .25 * sway.amp;
+      swayEl.setAttribute("transform", "rotate(" + deg.toFixed(3) + " 200 566)");
+
+      // pollen
+      if (pollen.level > .01) {
+        spawnAcc += pollen.level * (mobile ? 7 : 13) * dt;
+        while (spawnAcc > 1 && parts.length < 140) { spawn(); spawnAcc -= 1; }
+      }
+      ctx.clearRect(0, 0, W, H);
+      for (var i = parts.length - 1; i >= 0; i--) {
+        var p = parts[i];
+        p.life += dt;
+        if (p.life > p.max) { parts.splice(i, 1); continue; }
+        p.x += (p.vx + Math.sin(p.ph + p.life * 1.2) * .35) * dt * 60;
+        p.y += p.vy * dt * 60;
+        var a = Math.sin(Math.PI * p.life / p.max);
+        ctx.beginPath();
+        ctx.fillStyle = "rgba(217,164,65," + (a * .18).toFixed(3) + ")";
+        ctx.arc(p.x, p.y, p.r * 3.2, 0, 6.283);
+        ctx.fill();
+        ctx.beginPath();
+        ctx.fillStyle = "rgba(226,174,72," + (a * .9).toFixed(3) + ")";
+        ctx.arc(p.x, p.y, p.r, 0, 6.283);
+        ctx.fill();
+      }
+    });
+  })();
+  </script>
+</body>
+</html>
