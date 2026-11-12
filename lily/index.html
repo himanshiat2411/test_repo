@@ -199,11 +199,10 @@
     /* ---------- Ending ---------- */
     .ending {
       position: relative; z-index: 4;
-      padding: 14vh 24px 6vh;
+      padding: 10vh 24px 6vh;
       display: flex; flex-direction: column; align-items: center;
       color: #3B3128;
-      /* the pot's shadow fades into the garden */
-      background: linear-gradient(to bottom, rgba(8, 10, 6, .92) 0, rgba(8, 10, 6, 0) 45vh);
+      background: rgba(8, 10, 6, .35);
     }
     .static .ending { background: none; }
     .static .bg__layer { top: -30%; }
@@ -220,6 +219,45 @@
       font-size: .9rem; opacity: .6;
     }
     footer span { display: none; }
+
+    /* ---------- Inspiration ---------- */
+    .inspiration {
+      position: relative; z-index: 4; color: #F4EFE6;
+      padding-block: 16vh 4vh;
+      padding-left: max(24px, env(safe-area-inset-left, 0px));
+      padding-right: max(24px, env(safe-area-inset-right, 0px));
+      background: linear-gradient(to bottom, rgba(8, 10, 6, .92) 0, rgba(8, 10, 6, .55) 40vh, rgba(8, 10, 6, .35) 100%);
+    }
+    .insp-head, .insp-meaning { max-width: 36rem; margin: 0 auto; }
+    .insp-head h3 {
+      font-family: var(--serif); font-weight: 400;
+      font-size: clamp(2.1rem, 4.6vw, 3.2rem); line-height: 1.1; margin-bottom: 20px; text-wrap: balance;
+    }
+    .insp-head p, .insp-meaning p { font-size: 1.05rem; line-height: 1.8; opacity: .9; }
+    .insp-steps {
+      list-style: none; max-width: 1120px; margin: 9vh auto;
+      display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: clamp(16px, 2.6vw, 36px);
+      align-items: start;
+    }
+    .insp-steps li:nth-child(2) { margin-top: 8vh; }
+    .insp-steps li:nth-child(3) { margin-top: 16vh; }
+    .photo { position: relative; aspect-ratio: 3 / 4; max-width: 100%; overflow: hidden; background: #1A1F14; }
+    .photo img { width: 100%; height: 100%; object-fit: cover; display: block; }
+    /* ring around the closed bud in the first photo */
+    .marker {
+      position: absolute; left: 44.5%; top: 75%; width: 22%; aspect-ratio: 1;
+      transform: translate(-50%, -50%);
+      border: 1.5px solid rgba(255, 255, 255, .9); border-radius: 50%;
+      box-shadow: 0 0 0 1px rgba(0, 0, 0, .25);
+    }
+    figcaption { margin-top: 14px; font-size: .95rem; line-height: 1.6; opacity: .9; }
+    figcaption .step { display: block; font-family: var(--serif); font-size: 1.35rem; line-height: 1.2; margin-bottom: 6px; opacity: 1; }
+    .insp-meaning h4 { font-family: var(--serif); font-weight: 400; font-size: clamp(1.7rem, 3.4vw, 2.3rem); margin-bottom: 18px; }
+    .insp-meaning p + p { margin-top: 1em; }
+    @media (max-width: 760px) {
+      .insp-steps { grid-template-columns: 1fr; gap: 44px; max-width: 26rem; margin: 7vh auto; }
+      .insp-steps li:nth-child(2), .insp-steps li:nth-child(3) { margin-top: 0; }
+    }
 
     /* ---------- Static story list (reduced motion / no JS) ---------- */
     .story { display: none; }
@@ -505,6 +543,62 @@
         <li><p class="cap__label">The pollen</p><h2>I want my work to leave a mark.</h2></li>
       </ol>
       <p class="message">Growth doesn’t always show. But when it’s time, it blooms.</p>
+    </section>
+
+    <!-- ================= INSPIRATION ================= -->
+    <section class="inspiration" aria-labelledby="insp-title">
+      <div class="insp-head">
+        <p class="cap__label">What inspired me</p>
+        <h3 id="insp-title">A lily I bought, and what it taught me</h3>
+        <p>One day I bought a small bunch of flowers. Inside it was one open lily and a tight green bud. The bud looked like it would never open.</p>
+      </div>
+
+      <ol class="insp-steps">
+        <li>
+          <figure>
+            <div class="photo">
+              <img src="images/lily-1.jpg" width="900" height="1200" loading="lazy"
+                alt="A pink lily bouquet in pink wrapping, with one open lily and a closed green bud below it." />
+              <span class="marker" aria-hidden="true"></span>
+            </div>
+            <figcaption>
+              <span class="step">The day I bought it</span>
+              One lily was open. Below it sat a small green bud, closed tight.
+            </figcaption>
+          </figure>
+        </li>
+        <li>
+          <figure>
+            <div class="photo">
+              <img src="images/lily-2.jpg" width="900" height="1200" loading="lazy"
+                alt="Two soft pink lilies open in a vase, with dark red anthers." />
+            </div>
+            <figcaption>
+              <span class="step">After some days in water</span>
+              I put the flowers in water and waited. The buds opened, one petal at a time.
+            </figcaption>
+          </figure>
+        </li>
+        <li>
+          <figure>
+            <div class="photo">
+              <img src="images/lily-3.jpg" width="900" height="1200" loading="lazy"
+                alt="The lilies in full bloom in a white vase against a white wall, with yellow filler flowers." />
+            </div>
+            <figcaption>
+              <span class="step">In full bloom</span>
+              The bud that looked like nothing became the flower everyone noticed.
+            </figcaption>
+          </figure>
+        </li>
+      </ol>
+
+      <div class="insp-meaning">
+        <h4>How it shaped me</h4>
+        <p>Watching that bud open, I saw my own story. In chemical engineering I was like that closed bud: growing, but not showing it yet.</p>
+        <p>The water was the time, the learning and the people who believed in me. Design was the moment I opened.</p>
+        <p>The lily did not rush, and it did not need anyone to see it grow. When it was ready, it bloomed. That is how I want to grow, and how I want my work to feel.</p>
+      </div>
     </section>
 
     <!-- ================= ENDING ================= -->
@@ -1015,6 +1109,12 @@
       for (var d = 0; d < dots.length; d++) dots[d].classList.toggle("is-active", d === active);
     }
     updateProgress();
+
+    /* ---------- Inspiration photos rise in ---------- */
+    gsap.utils.toArray(".insp-steps li").forEach(function (li) {
+      gsap.from(li, { y: 40, opacity: .2, duration: 1.1, ease: "sine.out",
+        scrollTrigger: { trigger: li, start: "top 88%", once: true } });
+    });
 
     /* ---------- Sway + pollen (one gentle loop) ---------- */
     var swayEl = $("sway");
