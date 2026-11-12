@@ -1,0 +1,529 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
+  <title>Flora Blue Lily</title>
+  <meta name="description" content="A single blue lily opens on a black page, with notes about the lily family." />
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Bodoni+Moda:opsz,wght@6..96,400;6..96,500&family=Manrope:wght@400;500;600;700&display=swap" rel="stylesheet" />
+  <style>
+    /* Layout: three columns on black (facts | flower | notes), stacked on phones */
+    :root {
+      --bg: #000000;
+      --fg: #F2F2F2;
+      --muted: #8C8C8C;
+      --line: #2A2A2A;
+      --button: #262626;
+      --accent: #7C8CF0;          /* the lily's blue */
+      --display: "Bodoni Moda", "Didot", "Bodoni 72", Georgia, serif;
+      --body: "Manrope", system-ui, -apple-system, "Segoe UI", sans-serif;
+      color-scheme: dark;
+    }
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    html, body { background: var(--bg); color: var(--fg); }
+    body {
+      font-family: var(--body); font-size: 15px; line-height: 1.6;
+      -webkit-font-smoothing: antialiased; overflow-x: hidden;
+    }
+    a { color: inherit; text-decoration: none; }
+    a:focus-visible, button:focus-visible { outline: 1px solid var(--accent); outline-offset: 4px; }
+
+    .page {
+      min-height: 100vh; min-height: 100svh;
+      display: grid; grid-template-rows: auto 1fr auto;
+      padding-block: 28px 30px;
+      padding-left: max(24px, env(safe-area-inset-left, 0px));
+      padding-right: max(24px, env(safe-area-inset-right, 0px));
+      max-width: 1440px; margin: 0 auto;
+    }
+
+    /* header */
+    header { display: flex; align-items: center; justify-content: space-between; gap: 24px; }
+    .logo { font-weight: 700; font-size: 1.05rem; letter-spacing: .01em; }
+    nav { display: flex; gap: clamp(20px, 3.4vw, 48px); font-size: .85rem; font-weight: 600; }
+    nav a { padding-bottom: 8px; border-bottom: 2px solid transparent; color: var(--muted); transition: color .3s; }
+    nav a:hover { color: var(--fg); }
+    nav a[aria-current="page"] { color: var(--fg); border-bottom-color: var(--fg); }
+
+    /* main three columns */
+    main.hero {
+      display: grid; align-items: center;
+      grid-template-columns: minmax(220px, 1fr) minmax(320px, 1.55fr) minmax(220px, 1fr);
+      gap: clamp(20px, 3vw, 48px);
+      padding-block: 24px;
+    }
+    .facts { max-width: 21rem; }
+    .family { display: flex; align-items: center; gap: 10px; font-size: .85rem; font-weight: 700; }
+    .family::before { content: ""; width: 9px; height: 9px; background: #4A4A4A; }
+    h1 {
+      font-family: var(--display); font-weight: 400;
+      font-size: clamp(3.4rem, 6.4vw, 5.6rem); line-height: 1; letter-spacing: -.01em;
+      margin: 22px 0 26px;
+    }
+    .facts p.lead { color: #D6D6D6; font-size: 1rem; line-height: 1.6; }
+    .meta { display: flex; gap: 44px; margin-top: 46px; }
+    .meta dt { font-weight: 700; font-size: .85rem; margin-bottom: 10px; }
+    .meta dd { color: var(--muted); font-size: .78rem; line-height: 1.6; }
+
+    .flower { position: relative; height: min(78vh, 760px); min-height: 420px; }
+    .flower svg { width: 100%; height: 100%; display: block; overflow: visible; }
+
+    .notes { justify-self: end; width: 100%; max-width: 15.5rem; }
+    .thumbs { display: grid; grid-template-columns: 3fr 1fr; gap: 6px; height: 108px; }
+    .thumbs svg { width: 100%; height: 100%; display: block; background: #050505; }
+    .notes h2 { font-size: .85rem; font-weight: 700; margin: 34px 0 12px; }
+    .notes p { color: #BDBDBD; font-size: .78rem; line-height: 1.75; }
+    .byline { display: flex; align-items: center; gap: 12px; margin-top: 16px; font-size: .75rem; color: #BDBDBD; }
+    .byline::before { content: ""; width: 22px; height: 1px; background: #6A6A6A; }
+    .button {
+      display: block; width: 100%; margin-top: 44px; padding: 17px 10px;
+      background: var(--button); color: var(--fg); border: 0; cursor: pointer;
+      font: 700 .9rem var(--body); text-align: center;
+      transition: background .3s;
+    }
+    .button:hover { background: #333; }
+
+    /* footer row */
+    .bar { display: flex; align-items: center; justify-content: space-between; gap: 24px; }
+    .stages { display: flex; align-items: center; gap: 12px; }
+    .stages button {
+      width: 9px; height: 9px; border-radius: 50%; border: 0; padding: 0; cursor: pointer;
+      background: #4A4A4A; transition: background .3s, transform .3s;
+      position: relative;
+    }
+    .stages button::after { content: ""; position: absolute; inset: -14px; }   /* bigger tap area */
+    .stages button[aria-pressed="true"] { background: var(--fg); transform: scale(1.15); }
+    .stage-name { color: var(--muted); font-size: .78rem; margin-left: 10px; min-width: 6em; }
+    .share { display: flex; align-items: center; gap: clamp(20px, 4vw, 48px); font-size: .8rem; }
+    .share b { font-weight: 700; margin-right: auto; }
+    .share a { color: var(--muted); }
+    .share a:hover { color: var(--fg); }
+    .share-row { display: flex; gap: 22px; }
+
+    /* details below the fold */
+    .details {
+      max-width: 1440px; margin: 0 auto;
+      padding-block: 12vh 10vh;
+      padding-left: max(24px, env(safe-area-inset-left, 0px));
+      padding-right: max(24px, env(safe-area-inset-right, 0px));
+      border-top: 1px solid var(--line);
+      display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 2fr); gap: 48px;
+    }
+    .details h3 { font-family: var(--display); font-weight: 400; font-size: clamp(2.2rem, 4vw, 3.2rem); line-height: 1.05; }
+    .care { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 34px 48px; }
+    .care dt { font-weight: 700; font-size: .85rem; margin-bottom: 8px; }
+    .care dd { color: #BDBDBD; font-size: .95rem; line-height: 1.65; }
+    .note { grid-column: 2; color: var(--muted); font-size: .85rem; }
+    .made { text-align: center; color: var(--muted); font-size: .8rem; padding: 0 24px 40px; }
+
+    /* phones and small tablets: stack */
+    @media (max-width: 900px) {
+      main.hero { grid-template-columns: 1fr; gap: 8px; }
+      .flower { order: -1; height: 64vh; min-height: 380px; }
+      .facts { max-width: none; }
+      h1 { margin: 14px 0 18px; }
+      .meta { margin-top: 28px; }
+      .notes { justify-self: stretch; max-width: none; margin-top: 30px; }
+      .thumbs { height: 140px; }
+      .bar { margin-top: 30px; flex-wrap: wrap; }
+      .details { grid-template-columns: 1fr; padding-block: 60px; }
+      .note { grid-column: 1; }
+    }
+    @media (max-width: 480px) {
+      nav { gap: 18px; }
+      .care { grid-template-columns: 1fr; }
+    }
+  </style>
+</head>
+<body>
+  <div class="page" id="top">
+    <header>
+      <a class="logo" href="#top">Flora</a>
+      <nav aria-label="Main">
+        <a href="#top" aria-current="page">Species</a>
+        <a href="#care">Care</a>
+        <a href="#about">About</a>
+      </nav>
+    </header>
+
+    <main class="hero">
+      <section class="facts" aria-labelledby="name">
+        <p class="family">Liliaceae</p>
+        <h1 id="name">Lily</h1>
+        <p class="lead">Lilies grow from bulbs that rest underground through winter. In summer a single stem rises, buds swell, and each flower opens one petal at a time.</p>
+        <dl class="meta">
+          <div><dt>Origin</dt><dd>Asia, Europe,<br />North America</dd></div>
+          <div><dt>Family</dt><dd>Liliaceae</dd></div>
+        </dl>
+      </section>
+
+      <div class="flower">
+        <svg id="lily" viewBox="34 34 332 440" preserveAspectRatio="xMidYMid meet" role="img" aria-label="A blue lily opening on its stem">
+          <defs>
+            <!-- blue tepal: pale wavy margin, periwinkle, deep blue centre -->
+            <linearGradient id="tepalGrad" x1="0" y1="0" x2="1" y2="0">
+              <stop offset="0"   stop-color="#F3F5FF" />
+              <stop offset=".09" stop-color="#C9D1FA" />
+              <stop offset=".2"  stop-color="#8797EE" />
+              <stop offset=".38" stop-color="#5566D8" />
+              <stop offset=".5"  stop-color="#3B48C0" />
+              <stop offset=".62" stop-color="#5566D8" />
+              <stop offset=".8"  stop-color="#8797EE" />
+              <stop offset=".91" stop-color="#C9D1FA" />
+              <stop offset="1"   stop-color="#F3F5FF" />
+            </linearGradient>
+            <linearGradient id="throatGrad" x1="0" y1="1" x2="0" y2="0">
+              <stop offset="0"   stop-color="#CBDD6E" stop-opacity="1" />
+              <stop offset=".12" stop-color="#D9E58A" stop-opacity=".75" />
+              <stop offset=".3"  stop-color="#B9C2F5" stop-opacity="0" />
+            </linearGradient>
+            <linearGradient id="tipLight" x1="0" y1="1" x2="0" y2="0">
+              <stop offset=".6" stop-color="#FFFFFF" stop-opacity="0" />
+              <stop offset="1"  stop-color="#F2F4FF" stop-opacity=".3" />
+            </linearGradient>
+            <radialGradient id="throatCenter">
+              <stop offset="0"   stop-color="#D3E27A" />
+              <stop offset=".55" stop-color="#DDE69A" stop-opacity=".7" />
+              <stop offset="1"   stop-color="#A9B4F0" stop-opacity="0" />
+            </radialGradient>
+            <!-- bud: deep blue with green seams, tip and base -->
+            <linearGradient id="budSide" x1="0" y1="0" x2="1" y2="0">
+              <stop offset="0"   stop-color="#141A4E" />
+              <stop offset=".22" stop-color="#2A3592" />
+              <stop offset=".42" stop-color="#5A6AD2" />
+              <stop offset=".52" stop-color="#8090E4" />
+              <stop offset=".7"  stop-color="#3442A6" />
+              <stop offset="1"   stop-color="#121848" />
+            </linearGradient>
+            <linearGradient id="budTip" x1="0" y1="1" x2="0" y2="0">
+              <stop offset=".78" stop-color="#A9C66A" stop-opacity="0" />
+              <stop offset=".9"  stop-color="#A9C66A" stop-opacity=".75" />
+              <stop offset="1"   stop-color="#C3D987" stop-opacity="1" />
+            </linearGradient>
+            <linearGradient id="budBase" x1="0" y1="1" x2="0" y2="0">
+              <stop offset="0"   stop-color="#6E9644" />
+              <stop offset=".14" stop-color="#86AA58" stop-opacity=".8" />
+              <stop offset=".3"  stop-color="#86AA58" stop-opacity="0" />
+            </linearGradient>
+            <!-- stem fades into the black, like a studio photo -->
+            <linearGradient id="stemGrad" gradientUnits="userSpaceOnUse" x1="0" y1="200" x2="0" y2="474">
+              <stop offset="0"   stop-color="#7D9A6A" />
+              <stop offset=".55" stop-color="#5D7650" stop-opacity=".9" />
+              <stop offset="1"   stop-color="#3C4E33" stop-opacity="0" />
+            </linearGradient>
+            <linearGradient id="leafGrad" gradientUnits="userSpaceOnUse" x1="0" y1="300" x2="0" y2="560">
+              <stop offset="0"  stop-color="#6E8F58" />
+              <stop offset=".7" stop-color="#3E5A33" stop-opacity=".6" />
+              <stop offset="1"  stop-color="#2A3D22" stop-opacity="0" />
+            </linearGradient>
+            <linearGradient id="antherGrad" x1="0" y1="0" x2="0" y2="1">
+              <stop offset="0"  stop-color="#B0602E" />
+              <stop offset=".5" stop-color="#7E3A1C" />
+              <stop offset="1"  stop-color="#4E2010" />
+            </linearGradient>
+            <filter id="pshadow" x="-30%" y="-20%" width="160%" height="140%">
+              <feDropShadow dx="0" dy="2" stdDeviation="2.6" flood-color="#000010" flood-opacity=".55" />
+            </filter>
+            <filter id="soft" x="-50%" y="-10%" width="200%" height="120%">
+              <feGaussianBlur stdDeviation="2.2" />
+            </filter>
+          </defs>
+
+          <g id="plant">
+            <path id="stem" fill="none" stroke="url(#stemGrad)" stroke-width="7" stroke-linecap="round" d="M200,206 C201,290 199,400 200,474" />
+            <path fill="none" stroke="#B8CDA6" stroke-width="1.2" stroke-linecap="round" opacity=".35" d="M201.8,210 C202.8,290 200.8,380 201.8,440" />
+            <g id="head">
+              <g id="bud"></g>
+              <g id="petals"></g>
+              <circle id="throat" cx="200" cy="200" r="26" fill="url(#throatCenter)" />
+              <g id="stamens"></g>
+            </g>
+          </g>
+        </svg>
+      </div>
+
+      <aside class="notes" aria-label="Notes">
+        <div class="thumbs" aria-hidden="true">
+          <!-- live close-ups of the same flower -->
+          <svg viewBox="70 120 260 140" preserveAspectRatio="xMidYMid slice"><use href="#head" /></svg>
+          <svg viewBox="176 150 46 90" preserveAspectRatio="xMidYMid slice"><use href="#head" /></svg>
+        </div>
+        <h2>Observe the beauty of the lily family</h2>
+        <p>Liliaceae holds about 15 genera and around 600 species. Most grow from bulbs and carry six petal-like tepals around six stamens.</p>
+        <p class="byline">Notes by Himanshi</p>
+        <a class="button" href="#care">View Detail</a>
+      </aside>
+    </main>
+
+    <div class="bar">
+      <div class="stages" role="group" aria-label="Bloom stage">
+        <button type="button" data-stage="bud" aria-pressed="false" aria-label="Bud"></button>
+        <button type="button" data-stage="opening" aria-pressed="false" aria-label="Opening"></button>
+        <button type="button" data-stage="bloom" aria-pressed="false" aria-label="Bloom"></button>
+        <button type="button" data-stage="full" aria-pressed="false" aria-label="Full bloom"></button>
+        <span class="stage-name" aria-live="polite"></span>
+      </div>
+      <div class="share">
+        <b>Share on</b>
+        <span class="share-row"><a href="https://www.facebook.com/">Fb</a><a href="https://x.com/">Tw</a><a href="https://www.instagram.com/">Ig</a></span>
+      </div>
+    </div>
+  </div>
+
+  <section class="details" id="care" aria-labelledby="care-title">
+    <h3 id="care-title">Growing a lily</h3>
+    <dl class="care">
+      <div><dt>Planting</dt><dd>Set bulbs about 15 cm deep in autumn or early spring, in soil that drains well.</dd></div>
+      <div><dt>Light</dt><dd>Full sun on the flowers, with the roots kept cool and shaded.</dd></div>
+      <div><dt>Water</dt><dd>Keep the soil evenly moist while the stem grows. Water less once the flowers fade.</dd></div>
+      <div><dt>Bloom time</dt><dd>Early to late summer, depending on the type. Each flower lasts about a week.</dd></div>
+    </dl>
+    <p class="note">The blue on this page is imagined. Real lilies come in white, pink, red, orange and yellow, but not true blue.</p>
+  </section>
+
+  <p class="made" id="about">Designed and coded by Himanshi, M.Des, DTU</p>
+
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.5/gsap.min.js"></script>
+  <script>
+  (function () {
+    "use strict";
+    var NS = "http://www.w3.org/2000/svg";
+    var svg = document.getElementById("lily");
+    var CX = 200, CY = 200;
+
+    var seed = 23;
+    function rnd(a, b) { seed = (seed * 16807) % 2147483647; return a + ((seed - 1) / 2147483646) * (b - a); }
+    function el(tag, attrs, parent) {
+      var n = document.createElementNS(NS, tag);
+      for (var k in attrs) n.setAttribute(k, attrs[k]);
+      if (parent) parent.appendChild(n);
+      return n;
+    }
+    function f(n) { return Math.round(n * 10) / 10; }
+    function $(id) { return document.getElementById(id); }
+    function clamp01(x) { return x < 0 ? 0 : x > 1 ? 1 : x; }
+
+    /* ---------- shape helpers ---------- */
+    function smoothPath(pts, close) {
+      var d = "M" + f(pts[0][0]) + "," + f(pts[0][1]);
+      for (var i = 0; i < pts.length - 1; i++) {
+        var p0 = pts[i - 1] || pts[i], p1 = pts[i], p2 = pts[i + 1], p3 = pts[i + 2] || p2;
+        d += " C" + f(p1[0] + (p2[0] - p0[0]) / 6) + "," + f(p1[1] + (p2[1] - p0[1]) / 6) +
+             " " + f(p2[0] - (p3[0] - p1[0]) / 6) + "," + f(p2[1] - (p3[1] - p1[1]) / 6) +
+             " " + f(p2[0]) + "," + f(p2[1]);
+      }
+      return d + (close ? "Z" : "");
+    }
+    function blade(bx, by, L, bend, widthFn, N) {
+      N = N || 36;
+      var axis = [], left = [], right = [];
+      for (var i = 0; i <= N; i++) {
+        var t = i / N, ax = bx + bend * L * t * t, ay = by - L * t;
+        var tx = 2 * bend * L * t, ty = -L, len = Math.sqrt(tx * tx + ty * ty);
+        var nx = -ty / len, ny = tx / len, w = widthFn(t);
+        axis.push([ax, ay, nx, ny, w[0], w[1]]);
+        left.push([ax - nx * w[0], ay - ny * w[0]]);
+        right.push([ax + nx * w[1], ay + ny * w[1]]);
+      }
+      return { axis: axis, left: left, right: right, N: N };
+    }
+    function bladeLine(b, frac, t0, t1) {
+      var pts = [];
+      for (var i = Math.round(t0 * b.N); i <= Math.round(t1 * b.N); i++) {
+        var a = b.axis[i], w = frac < 0 ? a[4] : a[5];
+        pts.push([a[0] + a[2] * w * frac, a[1] + a[3] * w * frac]);
+      }
+      return smoothPath(pts, false);
+    }
+    function outline(b) { return smoothPath(b.left.concat(b.right.slice().reverse().slice(1)), true); }
+
+    /* ---------- surface grain ---------- */
+    (function () {
+      var c = document.createElement("canvas"); c.width = c.height = 128;
+      var x = c.getContext("2d"), img = x.createImageData(128, 128), d = img.data;
+      for (var i = 0; i < d.length; i += 4) {
+        var v = Math.random(), light = v > .82;
+        d[i] = d[i + 1] = d[i + 2] = light ? 255 : 0;
+        d[i + 3] = light ? (v - .82) * 240 : Math.pow(Math.random(), 2.2) * 70;
+      }
+      x.putImageData(img, 0, 0);
+      var pat = el("pattern", { id: "grain", patternUnits: "userSpaceOnUse", width: 40, height: 40 }, svg.querySelector("defs"));
+      el("image", { href: c.toDataURL(), width: 40, height: 40, preserveAspectRatio: "none" }, pat);
+    })();
+    function grain(parent, d, op) { el("path", { d: d, fill: "url(#grain)", opacity: op || ".5" }, parent); }
+
+    /* ---------- bud ---------- */
+    (function () {
+      var parent = $("bud");
+      var b = blade(CX, CY + 6, 104, 0, function (t) {
+        var w = 16 * Math.pow(Math.sin(Math.PI * Math.pow(t, .78)), .66) * (1 - .1 * t);
+        return [w, w];
+      }, 30);
+      var d = outline(b);
+      el("path", { d: d, fill: "url(#budSide)" }, parent);
+      el("path", { d: d, fill: "url(#budTip)" }, parent);
+      el("path", { d: d, fill: "url(#budBase)" }, parent);
+      var r = el("g", { fill: "none", "stroke-linecap": "round" }, parent);
+      el("path", { d: bladeLine(b, -.42, .05, .97), stroke: "#B5CF86", "stroke-width": "1", opacity: ".6" }, r);
+      el("path", { d: bladeLine(b, .4, .05, .97), stroke: "#B5CF86", "stroke-width": "1", opacity: ".6" }, r);
+      el("path", { d: bladeLine(b, -.22, .12, .85), stroke: "#FFFFFF", "stroke-width": "1.4", opacity: ".3" }, r);
+      grain(parent, d, ".5");
+    })();
+
+    /* ---------- one tepal ---------- */
+    function tepal(parent, L, W, bend, ruf, spots) {
+      var phL = rnd(0, 6.28), phR = rnd(0, 6.28), frL = rnd(3.4, 4.6), frR = rnd(3.4, 4.6);
+      function profile(t, ph, fr) {
+        var base = .16 * (1 - t) + .84 * Math.pow(Math.sin(Math.PI * Math.pow(t, .66)), .72);
+        var wave = 1 + ruf * Math.sin(6.283 * fr * t + ph) * clamp01((t - .15) / .3) + .03 * Math.sin(6.283 * 10 * t + ph * 2);
+        return W / 2 * base * wave;
+      }
+      var b = blade(CX, CY, L, bend, function (t) { return [profile(t, phL, frL), profile(t, phR, frR)]; }, 44);
+      var shape = outline(b);
+      var g = el("g", null, parent);
+      var body = el("g", { filter: "url(#pshadow)" }, g);
+      el("path", { d: shape, fill: "url(#tepalGrad)" }, body);
+      var stripe = blade(CX, CY, L * .82, bend, function (t) { var w = W * .16 * Math.pow(Math.sin(Math.PI * Math.pow(t, .6)), .9); return [w, w]; }, 24);
+      el("path", { d: outline(stripe), fill: "#1C2486", opacity: ".5", filter: "url(#soft)" }, body);
+      var groove = blade(CX, CY, L * .42, bend, function (t) { var w = W * .09 * Math.sin(Math.PI * Math.pow(t, .7)); return [w, w]; }, 16);
+      el("path", { d: outline(groove), fill: "#D3E27A", opacity: ".8", filter: "url(#soft)" }, body);
+      el("path", { d: shape, fill: "url(#throatGrad)" }, body);
+      el("path", { d: shape, fill: "url(#tipLight)" }, body);
+      // fold along the middle: one half in shade
+      var axisPts = b.axis.map(function (a) { return [a[0], a[1]]; });
+      el("path", { d: smoothPath(b.right.concat(axisPts.slice().reverse()), true), fill: "#05082E", opacity: ".2" }, body);
+      el("path", { d: bladeLine(b, -.06, .06, .8), fill: "none", stroke: "#E6EAFF", "stroke-width": "2.2", opacity: ".2", filter: "url(#soft)" }, body);
+      var veins = el("g", { fill: "none", stroke: "#26309A", "stroke-width": ".35", "stroke-linecap": "round", opacity: ".32" }, body);
+      [-.86, -.72, -.58, -.44, -.3, -.16, .16, .3, .44, .58, .72, .86].forEach(function (fr) { el("path", { d: bladeLine(b, fr, .03, .9) }, veins); });
+      // dark spots and small bumps
+      var dots = el("g", null, body);
+      for (var i = 0; i < spots; i++) {
+        var t = .1 + .55 * Math.pow(rnd(0, 1), 1.2), ai = b.axis[Math.round(t * 44)];
+        var r0 = rnd(-1, 1), lat = r0 * Math.abs(r0) * .74, w = lat < 0 ? ai[4] : ai[5];
+        var rr = rnd(.6, t < .3 ? 2.1 : 1.5);
+        el("ellipse", { cx: f(ai[0] + ai[2] * w * lat), cy: f(ai[1] + ai[3] * w * lat), rx: f(rr * .8), ry: f(rr * 1.2),
+          fill: rnd(0, 1) > .35 ? "#0E1355" : "#1E287E", opacity: f(rnd(.6, .95)) }, dots);
+      }
+      for (var k = 0; k < 26; k++) {
+        var pt = rnd(.05, .24), ap = b.axis[Math.round(pt * 44)], pl = rnd(-.5, .5), pw = pl < 0 ? ap[4] : ap[5];
+        el("circle", { cx: f(ap[0] + ap[2] * pw * pl), cy: f(ap[1] + ap[3] * pw * pl), r: f(rnd(.4, .9)), fill: "#3445B6", opacity: ".7" }, dots);
+      }
+      grain(body, shape, ".5");
+      el("path", { d: shape, fill: "none", stroke: "#F1F3FF", "stroke-width": ".7", opacity: ".65", "stroke-linejoin": "round" }, g);
+      // tip curling back
+      var tip = b.axis[44], prev = b.axis[40], s = bend >= 0 ? 1 : -1;
+      var ux = tip[0] - prev[0], uy = tip[1] - prev[1], ul = Math.sqrt(ux * ux + uy * uy); ux /= ul; uy /= ul;
+      var vx = -uy * s, vy = ux * s;
+      function P(a, c) { return f(tip[0] + ux * a + vx * c) + "," + f(tip[1] + uy * a + vy * c); }
+      el("path", { d: "M" + P(-5, -1.5) + " C" + P(2, -1.5) + " " + P(5.5, 3) + " " + P(3, 6) +
+        " C" + P(1, 7.5) + " " + P(-2, 6) + " " + P(-1.5, 3.5) + " C" + P(-1.5, 2) + " " + P(-3, 1) + " " + P(-5, 1.5) + "Z",
+        fill: "#D2D9FB", opacity: ".85" }, g);
+      return g;
+    }
+
+    var ORDER = [30, -30, 90, -90, 150, -150];        // opening order
+    var petals = [];
+    [-150, 150, -90, 90, -30, 30].forEach(function (a, i) {
+      var inner = (i % 2 === 1);
+      var angle = a + rnd(-7, 7);
+      var g = tepal($("petals"), (inner ? 146 : 152) + rnd(-9, 9), (inner ? 86 : 72) + rnd(-6, 6), rnd(-.06, .06), inner ? .1 : .07, Math.round(rnd(60, 80)));
+      g.setAttribute("transform", "rotate(" + f(angle) + " " + CX + " " + CY + ")");
+      g._angle = angle;
+      petals[ORDER.indexOf(a)] = g;
+    });
+
+    /* ---------- stamens ---------- */
+    var filaments = [], anthers = [];
+    [-128, -72, -16, 42, 98, 152].forEach(function (a) {
+      var len = 86 + rnd(-6, 10), rad = a * Math.PI / 180;
+      var ex = CX + len * Math.sin(rad), ey = CY - len * Math.cos(rad), bend = rnd(-12, 12);
+      var mx = CX + len * .5 * Math.sin(rad) + bend * Math.cos(rad), my = CY - len * .5 * Math.cos(rad) + bend * Math.sin(rad);
+      var d = "M" + CX + "," + CY + " Q" + f(mx) + "," + f(my) + " " + f(ex) + "," + f(ey);
+      filaments.push(el("path", { d: d, fill: "none", stroke: "#D3E08E", "stroke-width": "2", "stroke-linecap": "round" }, $("stamens")));
+      var ag = el("g", { transform: "translate(" + f(ex) + "," + f(ey) + ") rotate(" + f(a + 90 + rnd(-18, 18)) + ")" }, $("stamens"));
+      el("ellipse", { cx: 0, cy: 0, rx: 11, ry: 3.4, fill: "url(#antherGrad)", stroke: "#3A160A", "stroke-width": ".6" }, ag);
+      for (var q = 0; q < 5; q++) el("circle", { cx: f(rnd(-8, 8)), cy: f(rnd(-2, 2)), r: ".55", fill: "#E8B04A", opacity: ".85" }, ag);
+      anthers.push(ag);
+    });
+    var pistil = el("path", { d: "M" + CX + "," + CY + " Q" + (CX + 8) + "," + (CY - 56) + " " + (CX + 16) + "," + (CY - 104),
+      fill: "none", stroke: "#C5D777", "stroke-width": "3.2", "stroke-linecap": "round" }, $("stamens"));
+    var stigma = el("g", { transform: "translate(" + (CX + 16) + "," + (CY - 107) + ")" }, $("stamens"));
+    [[-2.8, .5], [2.8, .5], [0, -3.1]].forEach(function (p) {
+      el("circle", { cx: p[0], cy: p[1], r: 3.6, fill: "#B9CC66", stroke: "#7E9238", "stroke-width": ".6" }, stigma);
+    });
+
+    /* ---------- stage dots ---------- */
+    var dots = Array.prototype.slice.call(document.querySelectorAll(".stages button"));
+    var nameEl = document.querySelector(".stage-name");
+    var NAMES = { bud: "Bud", opening: "Opening", bloom: "Bloom", full: "Full bloom" };
+    function mark(stage) {
+      dots.forEach(function (b) { b.setAttribute("aria-pressed", b.dataset.stage === stage ? "true" : "false"); });
+      nameEl.textContent = NAMES[stage];
+    }
+
+    var reduce = window.matchMedia && window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+    if (!window.gsap) { $("bud").setAttribute("opacity", "0"); mark("full"); dots.forEach(function (b) { b.disabled = true; }); return; }
+
+    /* ---------- the bloom ---------- */
+    function prepDraw(p) { var l = p.getTotalLength(); gsap.set(p, { strokeDasharray: l + " " + (l + 20), strokeDashoffset: l + 10 }); }
+    filaments.forEach(prepDraw); prepDraw(pistil);
+    gsap.set("#bud", { svgOrigin: CX + " " + (CY + 6), scale: .6 });
+    gsap.set(["#throat", stigma], { opacity: 0 });
+    gsap.set(anthers, { scale: 0, opacity: 0, transformOrigin: "50% 50%" });
+    petals.forEach(function (p) {
+      gsap.set(p, { svgOrigin: CX + " " + CY, rotation: p._angle * .05, scaleX: .3, scaleY: .66, opacity: 0 });
+    });
+
+    var tl = gsap.timeline({ paused: true, defaults: { ease: "sine.inOut" } });
+    tl.addLabel("bud", 0)
+      .to("#bud", { scale: 1, duration: 1.6 }, 0)
+      .addLabel("opening", 1.7)
+      .to(petals, { opacity: 1, duration: .3 }, 1.6)
+      .to("#bud", { opacity: 0, duration: .5 }, 1.75);
+    petals.forEach(function (p, i) {
+      tl.to(p, { svgOrigin: CX + " " + CY, rotation: p._angle, scaleX: 1, scaleY: 1, duration: 1.5, ease: "power2.inOut" }, 1.9 + i * .42);
+    });
+    tl.to("#throat", { opacity: 1, duration: 1 }, 2.4)
+      .addLabel("bloom", 4.6)
+      .to(filaments.concat(pistil), { strokeDashoffset: 0, duration: 1, stagger: .06 }, 4.6)
+      .to(anthers, { scale: 1, opacity: 1, duration: .6, stagger: .07 }, 5.1)
+      .to(stigma, { opacity: 1, duration: .4 }, 5.4)
+      .to({}, { duration: .2 }, 6.0)
+      .addLabel("full", 6.2);
+
+    tl.eventCallback("onUpdate", function () {
+      var t = tl.time();
+      mark(t < 1.7 ? "bud" : t < 4.6 ? "opening" : t < 6.2 ? "bloom" : "full");
+    });
+
+    // slow, living movement once it is open (like the reference)
+    var idle = gsap.timeline({ repeat: -1, yoyo: true, paused: true })
+      .to("#head", { svgOrigin: CX + " " + CY, rotation: 4, scale: 1.015, duration: 6, ease: "sine.inOut" });
+    var sway = gsap.timeline({ repeat: -1, yoyo: true, paused: true })
+      .to("#plant", { svgOrigin: "200 474", rotation: .8, duration: 5, ease: "sine.inOut" });
+
+    if (reduce) {
+      tl.progress(1); mark("full");
+    } else {
+      tl.play();
+      sway.play();
+      tl.eventCallback("onComplete", function () { idle.play(); });
+    }
+
+    // dots move the flower to that stage
+    dots.forEach(function (b) {
+      b.addEventListener("click", function () {
+        var stage = b.dataset.stage;
+        idle.pause();
+        gsap.to("#head", { rotation: 0, scale: 1, duration: .6, svgOrigin: CX + " " + CY });
+        if (reduce) { tl.seek(stage); mark(stage); return; }
+        tl.tweenTo(stage, { duration: Math.min(2.4, Math.abs(tl.labels[stage] - tl.time()) * .6 + .4), ease: "sine.inOut",
+          onComplete: function () { if (stage === "full") idle.play(); } });
+      });
+    });
+  })();
+  </script>
+</body>
+</html>
