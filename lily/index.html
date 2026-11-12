@@ -4,7 +4,7 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>If I Were a Lily</title>
-  <meta name="description" content="A personal story told through a lily that grows and blooms as you scroll — from chemical engineering to design." />
+  <meta name="description" content="A personal story told through a lily that grows and blooms as you scroll, from chemical engineering to design." />
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
   <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,400;0,500;0,600;1,400;1,500&family=Inter:wght@300;400;500&display=swap" rel="stylesheet" />
@@ -126,36 +126,31 @@
       opacity: 0; visibility: hidden;
     }
     .cap-title { opacity: 1; visibility: visible; }
-    .cap { text-shadow: 0 2px 22px rgba(0, 0, 0, .55), 0 1px 3px rgba(0, 0, 0, .35); }
+    .cap { text-shadow: 0 1px 12px rgba(0, 0, 0, .35); }
 
     .cap__label {
-      font-family: var(--sans); font-weight: 500;
-      font-size: 11px; letter-spacing: .24em; text-transform: uppercase;
-      opacity: .6; margin-bottom: 14px;
+      font-family: var(--sans); font-weight: 400;
+      font-size: .9rem; opacity: .7; margin-bottom: 10px;
     }
+    .petal-words { margin-top: 16px; font-size: 1rem; line-height: 1.7; opacity: .85; }
+    .petal-words span { display: inline-block; margin-right: .35em; }
     .cap h1 {
       font-family: var(--serif); font-weight: 400;
-      font-size: clamp(2.6rem, 7vw, 5rem); line-height: 1.02; letter-spacing: -.01em;
+      font-size: clamp(2.6rem, 7vw, 4.6rem); line-height: 1.05; letter-spacing: -.01em;
+      text-wrap: balance;
     }
-    .cap h1 em { font-style: italic; }
     .cap h2 {
       font-family: var(--serif); font-weight: 400;
-      font-size: clamp(1.7rem, 3.6vw, 3rem); line-height: 1.15;
+      font-size: clamp(1.7rem, 3.4vw, 2.8rem); line-height: 1.18;
+      text-wrap: balance;
     }
-    .cap h2 em { font-style: italic; }
-    .cap p.sub { margin-top: 14px; font-size: .95rem; opacity: .7; }
+    .cap p.sub { margin-top: 14px; font-size: 1rem; opacity: .75; }
 
     .scroll-hint {
       position: absolute; bottom: 4%; left: 50%; transform: translateX(-50%);
       z-index: 3; text-align: center;
-      font-size: 11px; letter-spacing: .24em; text-transform: uppercase; color: #EFE6DA; opacity: .65;
+      font-size: .9rem; color: #EFE6DA; opacity: .65;
     }
-    .scroll-hint::after {
-      content: ""; display: block; width: 1px; height: 46px; margin: 12px auto 0;
-      background: linear-gradient(#EFE6DA, transparent);
-      transform-origin: top; animation: hint 2.8s ease-in-out infinite;
-    }
-    @keyframes hint { 0% { transform: scaleY(0); } 50% { transform: scaleY(1); } 100% { transform: scaleY(1); opacity: 0; } }
 
     /* desktop: words on the left, lily on the right */
     @media (min-width: 900px) and (min-aspect-ratio: 1/1) {
@@ -163,7 +158,6 @@
       .captions { top: 50%; left: 9vw; right: auto; width: 30vw; padding: 0; text-align: left; transform: translateY(-50%); }
       .cap { left: 0; right: 0; top: 50%; transform: translateY(-50%); }
       .scroll-hint { left: 9vw; transform: none; text-align: left; }
-      .scroll-hint::after { margin-left: 0; }
     }
 
     /* pollen canvas */
@@ -193,7 +187,7 @@
     .progress li.is-active .dot { background: currentColor; transform: scale(1.25); }
     .progress .lbl {
       position: absolute; left: 16px; white-space: nowrap;
-      font-size: 10px; letter-spacing: .2em; text-transform: uppercase;
+      font-size: .8rem;
       opacity: 0; transition: opacity .6s ease;
     }
     .progress li.is-active .lbl { opacity: .7; }
@@ -205,7 +199,7 @@
     /* ---------- Ending ---------- */
     .ending {
       position: relative; z-index: 4;
-      padding: 10vh 20px 6vh;
+      padding: 14vh 24px 6vh;
       display: flex; flex-direction: column; align-items: center;
       color: #3B3128;
       /* the pot's shadow fades into the garden */
@@ -213,30 +207,19 @@
     }
     .static .ending { background: none; }
     .static .bg__layer { top: -30%; }
-    .static .rays, .static .vignette { opacity: 1; }
+    .static .vignette { opacity: 1; }
     .static #bud { display: none; }
     footer { color: #F4EFE6; }
-    .card {
-      max-width: 620px; width: 100%;
-      background: rgba(255, 253, 250, .78);
-      -webkit-backdrop-filter: blur(10px); backdrop-filter: blur(10px);
-      border: 1px solid rgba(217, 164, 65, .25);
-      border-radius: 4px;
-      padding: clamp(32px, 6vw, 64px);
-      box-shadow: 0 30px 80px -40px rgba(90, 60, 20, .35);
-    }
-    .card__label { font-size: 11px; letter-spacing: .24em; text-transform: uppercase; opacity: .55; margin-bottom: 18px; }
-    .card h3 { font-family: var(--serif); font-weight: 400; font-size: clamp(1.8rem, 4vw, 2.4rem); line-height: 1.15; margin-bottom: 22px; }
-    .card h3 em { font-style: italic; }
-    .card p { font-size: 1rem; line-height: 1.85; margin-bottom: 1em; }
-    .card p:last-child { margin-bottom: 0; }
-    .card .sign { font-family: var(--serif); font-style: italic; font-size: 1.3rem; margin-top: 26px; }
+    .reflection { max-width: 34rem; width: 100%; color: #F4EFE6; }
+    .reflection h3 { font-family: var(--serif); font-weight: 400; font-size: clamp(2rem, 4.4vw, 2.8rem); line-height: 1.12; margin-bottom: 24px; text-wrap: balance; }
+    .reflection p { font-size: 1.05rem; line-height: 1.8; margin-bottom: 1em; opacity: .9; }
+    .reflection .sign { font-family: var(--serif); font-style: italic; font-size: 1.4rem; margin-top: 28px; opacity: 1; }
 
     footer {
       margin-top: 14vh; text-align: center;
-      font-size: 12px; letter-spacing: .2em; text-transform: uppercase; opacity: .6;
+      font-size: .9rem; opacity: .6;
     }
-    footer span { display: block; margin-top: 10px; width: 1px; height: 30px; margin: 0 auto 18px; background: currentColor; opacity: .5; }
+    footer span { display: none; }
 
     /* ---------- Static story list (reduced motion / no JS) ---------- */
     .story { display: none; }
@@ -256,7 +239,7 @@
     .story .message { font-family: var(--serif); font-style: italic; font-size: 1.6rem; text-align: center; padding: 30px 0 0; border-top: 1px solid rgba(244,239,230,.2); }
 
     @media (prefers-reduced-motion: reduce) {
-      .scroll-hint::after { animation: none; }
+
     }
   </style>
 </head>
@@ -269,7 +252,6 @@
     <div class="bg__layer bg__cream"></div>
     <div class="bg__layer bg__gold"></div>
     <div class="vignette"></div>
-    <div class="rays"></div>
   </div>
   <div class="grain" aria-hidden="true"></div>
   <canvas class="pollen" aria-hidden="true"></canvas>
@@ -279,10 +261,10 @@
     <div class="progress__track"></div>
     <div class="progress__fill"></div>
     <ol>
-      <li class="is-active"><span class="dot"></span><span class="lbl">The Bulb</span></li>
-      <li><span class="dot"></span><span class="lbl">The Stem</span></li>
-      <li><span class="dot"></span><span class="lbl">The Bloom</span></li>
-      <li><span class="dot"></span><span class="lbl">The Pollen</span></li>
+      <li class="is-active"><span class="dot"></span><span class="lbl">The bulb</span></li>
+      <li><span class="dot"></span><span class="lbl">The stem</span></li>
+      <li><span class="dot"></span><span class="lbl">The bloom</span></li>
+      <li><span class="dot"></span><span class="lbl">The pollen</span></li>
     </ol>
   </nav>
 
@@ -291,29 +273,28 @@
     <section class="stage" aria-label="The lily">
       <div class="captions">
         <div class="cap cap-title">
-          <p class="cap__label">A story in four stages</p>
-          <h1>If I Were<br /><em>a Lily</em></h1>
-          <p class="sub">Growing quietly, then opening.</p>
+          <h1>If I Were a Lily</h1>
+          <p class="sub">A story about growing quietly, told in four stages.</p>
         </div>
         <div class="cap cap-1">
-          <p class="cap__label">01 — The Bulb</p>
-          <h2>Every bloom starts where <em>no one can see.</em></h2>
+          <p class="cap__label">The bulb</p>
+          <h2>Every bloom starts where no one can see.</h2>
         </div>
         <div class="cap cap-2">
-          <p class="cap__label">02 — The Stem</p>
-          <h2>I grew quietly — <em>from engineering into design.</em></h2>
+          <p class="cap__label">The stem</p>
+          <h2>I grew quietly, from engineering into design.</h2>
         </div>
         <div class="cap cap-3">
-          <p class="cap__label">03 — The Bloom</p>
-          <h2>When the time came, <em>I opened.</em></h2>
+          <p class="cap__label">The bloom</p>
+          <h2>When the time came, I opened.</h2>
+          <p class="petal-words"><span>Curious.</span> <span>Calm.</span> <span>Creative.</span> <span>Honest.</span> <span>Brave.</span> <span>Growing.</span></p>
         </div>
         <div class="cap cap-4">
-          <p class="cap__label">04 — The Pollen</p>
-          <h2>I want my work to <em>leave a mark.</em></h2>
+          <p class="cap__label">The pollen</p>
+          <h2>I want my work to leave a mark.</h2>
         </div>
         <div class="cap cap-5">
-          <p class="cap__label">If I were a lily</p>
-          <h2>Growth doesn’t always show. <em>But when it’s time, it blooms.</em></h2>
+          <h2>Growth doesn’t always show. But when it’s time, it blooms.</h2>
         </div>
       </div>
 
@@ -501,7 +482,6 @@
             </g>
 
             <!-- main flower: faces us, centre at 200,192 -->
-            <circle id="halo" cx="200" cy="192" r="190" fill="url(#haloGrad)" />
             <g id="bud"></g>
             <g id="petals"></g>
             <circle id="throat" cx="200" cy="192" r="26" fill="url(#throatCenter)" />
@@ -513,30 +493,29 @@
         </svg>
       </div>
 
-      <div class="scroll-hint">Scroll slowly</div>
+      <div class="scroll-hint">Scroll</div>
     </section>
 
     <!-- shown only for reduced motion / no JS -->
     <section class="story" aria-label="The story">
       <ol>
-        <li><p class="cap__label">01 — The Bulb</p><h2>Every bloom starts where no one can see.</h2></li>
-        <li><p class="cap__label">02 — The Stem</p><h2>I grew quietly — from engineering into design.</h2></li>
-        <li><p class="cap__label">03 — The Bloom</p><h2>When the time came, I opened.</h2></li>
-        <li><p class="cap__label">04 — The Pollen</p><h2>I want my work to leave a mark.</h2></li>
+        <li><p class="cap__label">The bulb</p><h2>Every bloom starts where no one can see.</h2></li>
+        <li><p class="cap__label">The stem</p><h2>I grew quietly, from engineering into design.</h2></li>
+        <li><p class="cap__label">The bloom</p><h2>When the time came, I opened.</h2><p class="petal-words">Curious. Calm. Creative. Honest. Brave. Growing.</p></li>
+        <li><p class="cap__label">The pollen</p><h2>I want my work to leave a mark.</h2></li>
       </ol>
       <p class="message">Growth doesn’t always show. But when it’s time, it blooms.</p>
     </section>
 
     <!-- ================= ENDING ================= -->
     <section class="ending" aria-label="Reflection">
-      <article class="card">
-        <p class="card__label">A small reflection</p>
-        <h3>Like a lily, <em>I took my time.</em></h3>
+      <article class="reflection">
+        <h3>Like a lily, I took my time.</h3>
         <!-- ✎ Edit this reflection to make it fully yours -->
-        <p>I started in chemical engineering. For a long time I learned in silence — formulas, labs, late nights. Nobody could see the roots that were growing.</p>
-        <p>Then I found design, and something opened. Today I try to make work that is calm, honest and useful — work that stays with people after they leave.</p>
+        <p>I started in chemical engineering. For a long time I learned in silence: formulas, labs, late nights. Nobody could see the roots that were growing.</p>
+        <p>Then I found design, and something opened. Today I try to make work that is calm, honest and useful, and that stays with people after they leave.</p>
         <p>I am still growing. But I am no longer hiding underground.</p>
-        <p class="sign">— Himanshi</p>
+        <p class="sign">Himanshi</p>
       </article>
       <footer>
         <span></span>
@@ -619,6 +598,23 @@
 
     var CX = 200, CY = 192;               // centre of the main flower
 
+    /* ---------- Surface grain (like real plant tissue) ---------- */
+    (function makeGrain() {
+      var c = document.createElement("canvas"); c.width = c.height = 128;
+      var x = c.getContext("2d"), img = x.createImageData(128, 128), d = img.data;
+      for (var i = 0; i < d.length; i += 4) {
+        var v = Math.random();
+        var light = v > .82;
+        d[i] = d[i + 1] = d[i + 2] = light ? 255 : 0;
+        d[i + 3] = light ? (v - .82) * 260 : Math.pow(Math.random(), 2.2) * 70;
+      }
+      x.putImageData(img, 0, 0);
+      var defs = svg.querySelector("defs");
+      var pat = el("pattern", { id: "grain", patternUnits: "userSpaceOnUse", width: 40, height: 40 }, defs);
+      el("image", { href: c.toDataURL(), width: 40, height: 40, preserveAspectRatio: "none" }, pat);
+    })();
+    function grain(parent, d, op) { el("path", { d: d, fill: "url(#grain)", opacity: op || ".55" }, parent); }
+
     /* ---------- Soil: crumbs, perlite and fibres ---------- */
     var crumbColors = ["#3D2B1F", "#4A3526", "#1C130C", "#57402F", "#33241A"];
     function crumbs(parent, n, x0, x1, y0, y1, pow) {
@@ -659,13 +655,16 @@
 
     /* ---------- Bulb: tan-pink, with a papery tunic at the neck ---------- */
     var bulb = $("bulb");
+    grain($("potFront"), "M50,568 Q200,584 350,568 L322,880 Q200,890 78,880 Z", ".35");
     el("path", { d: "M200,540 C230,546 248,572 244,598 C241,614 224,622 200,622 C176,622 159,614 156,598 C152,572 170,546 200,540 Z",
       fill: "url(#bulbBody)", stroke: "#6E4C3A", "stroke-width": ".7" }, bulb);
     var bl = el("g", { fill: "none", "stroke-linecap": "round" }, bulb);
-    el("path", { d: "M200,542 C188,566 184,594 190,620", stroke: "#7E5A47", "stroke-width": ".8", opacity: ".6" }, bl);
-    el("path", { d: "M200,542 C213,566 217,594 211,620", stroke: "#7E5A47", "stroke-width": ".8", opacity: ".6" }, bl);
-    el("path", { d: "M178,552 C166,574 166,600 176,616", stroke: "#7E5A47", "stroke-width": ".7", opacity: ".5" }, bl);
-    el("path", { d: "M222,552 C234,574 234,600 224,616", stroke: "#7E5A47", "stroke-width": ".7", opacity: ".5" }, bl);
+    el("path", { d: "M200,542 C188,566 184,594 190,620", stroke: "#7E5A47", "stroke-width": ".7", opacity: ".3" }, bl);
+    el("path", { d: "M200,542 C213,566 217,594 211,620", stroke: "#7E5A47", "stroke-width": ".7", opacity: ".3" }, bl);
+    el("path", { d: "M178,552 C166,574 166,600 176,616", stroke: "#7E5A47", "stroke-width": ".6", opacity: ".25" }, bl);
+    el("path", { d: "M222,552 C234,574 234,600 224,616", stroke: "#7E5A47", "stroke-width": ".6", opacity: ".25" }, bl);
+    el("path", { d: "M156,598 C170,612 230,612 244,598 C241,614 224,622 200,622 C176,622 159,614 156,598 Z", fill: "#3A2418", opacity: ".25" }, bulb);
+    grain(bulb, "M200,540 C230,546 248,572 244,598 C241,614 224,622 200,622 C176,622 159,614 156,598 C152,572 170,546 200,540 Z", ".5");
     el("path", { d: "M184,556 C176,572 175,592 180,606", stroke: "#F6E6D8", "stroke-width": "2", opacity: ".45" }, bl);
     // papery tunic around the neck
     el("path", { d: "M182,554 C185,546 189,540 193,536 C195,539 197,537 199,533 C201,537 204,538 207,535 C211,540 215,546 218,554 C208,550 192,550 182,554 Z",
@@ -703,7 +702,8 @@
         [-.55, .5].forEach(function (fr) {
           el("path", { d: bladeLine(b, fr, .06, .9), fill: "none", stroke: "#2F5426", "stroke-width": ".4", opacity: ".35" }, inner);
         });
-        el("path", { d: outline(b), fill: "none", stroke: "#DCEFD0", "stroke-width": ".6", opacity: ".45" }, inner);
+        grain(inner, outline(b), ".45");
+        el("path", { d: outline(b), fill: "none", stroke: "#DCEFD0", "stroke-width": ".5", opacity: ".35" }, inner);
       })(lf, inner);
       outer._data = lf;
       leafEls.push(outer);
@@ -724,6 +724,7 @@
       el("path", { d: bladeLine(b, .4, .05, .97), stroke: "#B5CF86", "stroke-width": "1", opacity: ".75" }, r);
       el("path", { d: bladeLine(b, -.05, .05, .97), stroke: "#C9DF9C", "stroke-width": ".8", opacity: ".55" }, r);
       el("path", { d: bladeLine(b, -.22, .12, .85), stroke: "#FFFFFF", "stroke-width": "1.4", opacity: ".35" }, r);
+      grain(parent, d, ".5");
       el("path", { d: d, fill: "none", stroke: "#3E0E22", "stroke-width": ".6", opacity: ".5" }, parent);
     }
     $("budLeftInner").setAttribute("transform", "rotate(-20 178 222)");
@@ -757,8 +758,20 @@
       el("path", { d: shape, fill: "url(#throatGrad)" }, body);
       if (opts.inside) el("path", { d: shape, fill: "url(#innerShade)" }, body);
       el("path", { d: shape, fill: "url(#tipLight)" }, body);
-      var veins = el("g", { fill: "none", stroke: "#B01F57", "stroke-width": ".5", "stroke-linecap": "round", opacity: ".28" }, body);
-      [-.68, -.4, -.2, .2, .4, .68].forEach(function (fr) { el("path", { d: bladeLine(b, fr, .04, .85) }, veins); });
+      // the tepal folds along its middle, so one half sits in shade
+      var axisPts = b.axis.map(function (a) { return [a[0], a[1]]; });
+      var shadeHalf = smoothPath(b.right.concat(axisPts.slice().reverse()), true);
+      el("path", { d: shadeHalf, fill: "#4A0620", opacity: ".16" }, body);
+      el("path", { d: bladeLine(b, -.06, .06, .8), fill: "none", stroke: "#FFE3EC", "stroke-width": "2.2", opacity: ".22", filter: "url(#soft)" }, body);
+      var veins = el("g", { fill: "none", stroke: "#A8174F", "stroke-width": ".35", "stroke-linecap": "round", opacity: ".3" }, body);
+      [-.86, -.72, -.58, -.44, -.3, -.16, .16, .3, .44, .58, .72, .86].forEach(function (fr) { el("path", { d: bladeLine(b, fr, .03, .9) }, veins); });
+      // tiny raised bumps near the throat
+      var pap = el("g", { fill: "#C23A6C", opacity: ".7" }, body);
+      for (var pi = 0; pi < 26; pi++) {
+        var pt = rnd(.05, .24), ap = b.axis[Math.round(pt * 44)], pl = rnd(-.5, .5), pw = pl < 0 ? ap[4] : ap[5];
+        el("circle", { cx: f(ap[0] + ap[2] * pw * pl), cy: f(ap[1] + ap[3] * pw * pl), r: f(rnd(.4, .9)) }, pap);
+      }
+      grain(body, shape, ".5");
       el("path", { d: bladeLine(b, 0, .3, .82), fill: "none", stroke: "#F7C3D5", "stroke-width": ".8", "stroke-linecap": "round", opacity: ".55" }, body);
       // raised dark spots
       var dots = el("g", null, body), n = opts.spots;
@@ -770,11 +783,10 @@
         var rr = rnd(.6, t < .3 ? 2.1 : 1.5);
         var sx = ai[0] + ai[2] * w * lat, sy = ai[1] + ai[3] * w * lat;
         el("ellipse", { cx: f(sx), cy: f(sy), rx: f(rr * .8), ry: f(rr * 1.2), fill: rnd(0, 1) > .35 ? "#6E0A30" : "#8E1640", opacity: f(rnd(.6, .95)) }, dots);
-        if (rr > 1.3) el("circle", { cx: f(sx - rr * .25), cy: f(sy - rr * .35), r: f(rr * .3), fill: "#F49ABA", opacity: ".45" }, dots);
+        if (rr > 1.5 && rnd(0, 1) > .5) el("circle", { cx: f(sx - rr * .25), cy: f(sy - rr * .35), r: f(rr * .25), fill: "#E77AA0", opacity: ".3" }, dots);
       }
-      // white wavy margin catches the light
-      el("path", { d: shape, fill: "none", stroke: "#FFFFFF", "stroke-width": "2.2", opacity: ".5", filter: "url(#rimGlow)" }, g);
-      el("path", { d: shape, fill: "none", stroke: "#FFF8FA", "stroke-width": ".9", opacity: ".95", "stroke-linejoin": "round" }, g);
+      // thin, slightly translucent margin
+      el("path", { d: shape, fill: "none", stroke: "#FFF2F6", "stroke-width": ".7", opacity: ".7", "stroke-linejoin": "round" }, g);
       // recurved tip
       var tip = b.axis[44], prev = b.axis[40], s = bend >= 0 ? 1 : -1;
       var ux = tip[0] - prev[0], uy = tip[1] - prev[1], ul = Math.sqrt(ux * ux + uy * uy); ux /= ul; uy /= ul;
@@ -782,7 +794,7 @@
       function P(a, c) { return f(Tx + ux * a + vx * c) + "," + f(Ty + uy * a + vy * c); }
       el("path", { d: "M" + P(-5, -1.5) + " C" + P(2, -1.5) + " " + P(5.5, 3) + " " + P(3, 6) +
           " C" + P(1, 7.5) + " " + P(-2, 6) + " " + P(-1.5, 3.5) + " C" + P(-1.5, 2) + " " + P(-3, 1) + " " + P(-5, 1.5) + "Z",
-        fill: "#F7D3DF", stroke: "#E089A8", "stroke-width": ".6", "stroke-linejoin": "round" }, g);
+        fill: "#F4C9D7", opacity: ".85" }, g);
       g._blade = b;
       return g;
     }
@@ -798,18 +810,14 @@
     ];
     var petalEls = [], wordEls = [];
     PETALS.forEach(function (p) {
-      var L = (p.inner ? 146 : 152) + rnd(-5, 5), W = (p.inner ? 86 : 72) + rnd(-4, 4);
+      p.angle += rnd(-7, 7);
+      var L = (p.inner ? 146 : 152) + rnd(-9, 9), W = (p.inner ? 86 : 72) + rnd(-6, 6);
       var g = tepal($("petals"), CX, CY, L, W, rnd(-.06, .06), { ruf: p.inner ? .1 : .07, spots: Math.round(rnd(60, 80)) });
       g.setAttribute("transform", "rotate(" + p.angle + " " + CX + " " + CY + ")");
       g._data = p;
       petalEls[p.order] = g;
-      var la = g._blade.axis[29], wp = rotPt(la[0], la[1], p.angle, CX, CY);
-      var w2 = el("text", { x: f(wp[0]), y: f(wp[1]), "text-anchor": "middle", "dominant-baseline": "middle",
-        "font-family": "Cormorant Garamond, Georgia, serif", "font-style": "italic", "font-weight": "600", "font-size": "13",
-        fill: "#FFF7FA", stroke: "#5A0A2A", "stroke-width": "2.4", "stroke-opacity": ".55", "stroke-linejoin": "round", "paint-order": "stroke", "letter-spacing": ".3" }, $("words"));
-      w2.textContent = p.word;
-      wordEls[p.order] = w2;
     });
+    wordEls = Array.prototype.slice.call(document.querySelectorAll(".cap-3 .petal-words span"));
 
     /* ---------- Second flower: side view, opens after the first ---------- */
     var petals2 = [];
@@ -894,7 +902,7 @@
 
     gsap.set(svg, { attr: { viewBox: V1 } });
     gsap.set(".bg__layer", { yPercent: 77 });
-    gsap.set(["#potBack", "#potFront", "#halo", "#centerGlow", "#throat", stigma, "#stamens2"], { opacity: 0 });
+    gsap.set(["#potBack", "#potFront", "#centerGlow", "#throat", stigma, "#stamens2"], { opacity: 0 });
     gsap.set(anthers, { scale: 0, opacity: 0, transformOrigin: "50% 50%" });
     gsap.set(wordEls, { opacity: 0 });
     gsap.set("#budLeft", { svgOrigin: "178 222", scale: 0, opacity: 0 });
@@ -916,7 +924,9 @@
       defaults: { ease: "sine.inOut" },
       scrollTrigger: {
         trigger: ".stage", start: "top top", end: "+=780%",
-        pin: true, scrub: true, anticipatePin: 1, onUpdate: updateProgress
+        pin: true, scrub: true, anticipatePin: 1, onUpdate: updateProgress,
+        onLeave: function () { gsap.to(".progress", { autoAlpha: 0, duration: .4 }); },
+        onEnterBack: function () { gsap.to(".progress", { autoAlpha: 1, duration: .4 }); }
       }
     });
 
@@ -953,11 +963,10 @@
     /* 3 — THE BLOOM: buds swell and blush, the main bud opens to face us */
     tl.to(".bg__cream", { yPercent: -23, duration: 1.2 }, 4.6)
       .to(svg, { attr: { viewBox: V3 }, duration: 1.3 }, 4.6)
-      .to([".vignette", ".rays"], { opacity: 1, duration: 1.6 }, 4.7)
+      .to(".vignette", { opacity: 1, duration: 1.6 }, 4.7)
       .to(["#budLeft", "#bud", "#bud2"], { scale: 1, duration: 1 }, 4.7)
       .to(petalEls, { opacity: 1, duration: .3 }, 5.65)
       .to("#bud", { opacity: 0, duration: .4 }, 5.8)
-      .to("#halo", { opacity: 1, duration: 1.5 }, 5.9)
       .to("#throat", { opacity: 1, duration: .8 }, 6.1);
     capIn(".cap-3", 5);
 
